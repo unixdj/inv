@@ -1,0 +1,10 @@
+inc/conf.t
+*.ps
+*.pdf
+*.txt
+.*.swp
+doc/*.t
+doc/*.p
+doc/*.e
+examples/invoice.ms
+examples/nitama-letter.ms

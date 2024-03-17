@@ -1,0 +1,50 @@
+Invoice Generator
+
+Copyright (c) 2024 Vadim Vygonets <vadik@vygo.net>
+
+The invoice generator is a document preprocessor and a troff
+macro package for invoices and letters.  The inv preprocessor
+turns a list of billed items into tbl source.  The -minv macro
+package, built on top of -ms macros, formats the first page of a
+letter, optionally including invoice-related information.
+
+Example invoice source:
+
+    .In 2024001 29.02.2024
+    .Ad "Client GmbH"
+    Geile Str. 0
+    00000 Gutdorf
+    .Ae
+    .Tax 19
+    .Charge 100 8 Hours Mindless keyboard bashing
+    .Charge 50 2 Hours Playing with oscilloscopes
+
+== Documentation:
+
+To build doc/manual.pdf run:
+
+    cd doc && make
+
+== Quick start
+
+    cp inc/conf-example.t inc/conf.t
+    $EDITOR inc/conf.t
+    mkdir dir
+    cd dir
+    cp ../inc/Makefile .
+    cp ../examples/invoice.ms file.ms
+    # or ../examples/letter.ms
+    $EDITOR file.ms
+    make file.pdf
+
+== inc/Makefile
+
+The default make target builds a .pdf for every .ms file in the
+directory.  The clean target is intentionally commented out.
+
+== Directory structure
+
+Everything needed to build invoices is in the inc directory.
+Keeping your invoices in this tree is silly, so symlink, copy,
+point the $INVDIR environment variable to it or edit the Makefile
+as you see fit.

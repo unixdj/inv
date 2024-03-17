@@ -1,0 +1,231 @@
+#!/usr/bin/awk -f
+
+# Copyright (c) 2024 Vadim Vygonets <vadik@vygo.net>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+BEGIN {
+	fmt = "%.2f"
+	rate = 0
+	warn = 1
+}
+
+$1 == ".lf" {
+	line = $2 - 1
+	print
+	next
+}
+
+{
+	line++
+}
+
+!/^\./ {
+	print
+	next
+}
+
+function thisline() {
+	print ".lf", line - 1
+}
+
+function nextline() {
+	print ".lf", line
+}
+
+function start() {
+	if (!proc) {
+		proc = 1
+		print ".TS"
+		print "allbox;"
+		print "lxb lb lb lb"
+		print "l n n n ."
+		thisline()
+		print "\\*(_o\t\\*(_p\t\\*(_q\t\\*(_r"
+		print "_"
+		nextline()
+	}
+}
+
+function check(u, r, s) {
+	if (warn && sprintf(fmt, u) != sprintf(fmt, r)) {
+		pref = ".tm inv: \\n(.F:"
+		if (ateof) {
+			pref = pref "EOF:"
+		} else {
+			pref = pref "\\n(.c:"
+		}
+		thisline()
+		print pref, s ":", "rounded sum of amounts differs from "
+		thisline()
+		print pref, "sum of printed rounded amounts"
+		thisline()
+		print pref, "    unrounded sum:         ", u
+		thisline()
+		printf pref "     rounded sum:            " fmt "\n", u
+		thisline()
+		printf pref "     sum of printed amounts: " fmt "\n", r
+	}
+}
+
+function total(s, f, n) {
+	print ".T&"
+	printf "l%s s s n%s .\n", f, f
+	thisline()
+	printf "\\*(%s\t" fmt "\n", s, n
+}
+
+function taxpercent() {
+	print ".T&"
+	print "l s n n ."
+	thisline()
+	printf "\\*(_v\t%s%%\t" fmt "\n", rate, subtax
+	subtax = 0
+}
+
+function taxed(dottax) {
+	if (!sum) {
+		return
+	}
+	if (dottax) {
+		multi = 1
+	}
+	net += sum
+	rnet += rsum
+	tax += subtax
+	rtax += sprintf(fmt, subtax)
+	if (multi) {
+		total("_s", "b", sum)
+		check(sum, rsum, "subtotal")
+		if (rate) {
+			taxpercent()
+		}
+		print "_"
+		if (dottax) {
+			print ".T&"
+			print "l n n n ."
+		}
+		nextline()
+	}
+	sum = 0
+	rsum = 0
+}
+
+$1 == ".Set" {
+	if ($2 == "tax") {
+		if (proc) {
+			print ".ab inv: \\n(.F:\\n(.c:",
+				".Set tax used inside invoice table,"
+			#	, "recovering"
+			#taxed(1)
+		}
+		rate = $3
+	} else if ($2 == "fmt") {
+		fmt = $3
+	} else if ($2 == "warn") {
+		warn = $3
+	} else {
+		print ".tm inv: \\n(.F:\\n(.c:",
+			"invalid .Set"
+	}
+	nextline()
+	next
+}
+
+$1 == ".Tax" {
+	start()
+	taxed(1)
+	if ($2 != "") {
+		rate = $2
+	}
+	nextline()
+	next
+}
+
+$1 == ".Taxed" {
+	subtax += $2
+	skiptax = 1
+	nextline()
+	next
+}
+
+$1 == ".Charge" {
+	start()
+	price = $2
+	quantity = $3 " " $4
+	sub(/ \\&$/, "", quantity)
+	amount = $2 * $3
+	sum += amount
+	rsum += sprintf(fmt, amount)
+	$1 = ""
+	$2 = ""
+	$3 = ""
+	$4 = ""
+	sub(/^ */, "")
+	# sub(/^[^ ]* *[^ ]* *[^ ]* *[^ ]* */, "")
+	printf "%s\t" fmt "\t%s\t" fmt "\n", $0, price, quantity, amount
+	if (!skiptax) {
+		subtax += amount * rate / 100
+	}
+	skiptax = 0
+	next
+}
+
+function end() {
+	if (!proc) {
+		return
+	}
+	taxed(0)
+	if (tax) {
+		total("_u", "b", net)
+		check(net, rnet, "net total")
+		if (multi) {
+			total("_w", "", tax)
+			check(tax, rtax, "total VAT")
+		} else {
+			taxpercent()
+		}
+	}
+	thisline()
+	total("_t", "b", net + tax)
+	check(net + tax, sprintf(fmt, net) + sprintf(fmt, tax), "total")
+	print ".TE"
+	printf ".ds Ne " fmt "\n", net
+	printf ".ds Tx " fmt "\n", tax
+	printf ".ds To " fmt "\n", net + tax
+	nextline()
+	proc = 0
+	net = 0
+	rnet = 0
+	tax = 0
+	rtax = 0
+	multi = 0
+}
+
+$1 == ".End" {
+	end()
+	next
+}
+
+$1 == ".Pa" || $1 == ".Pd" {
+	end()
+}
+
+{
+	print
+}
+
+END {
+	ateof = 1
+	end()
+}

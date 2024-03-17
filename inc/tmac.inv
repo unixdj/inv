@@ -1,0 +1,588 @@
+.\" Copyright (c) 2024 Vadim Vygonets <vadik@vygo.net>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\" =============================================================
+.
+.\" Names reserved for user: X[a-z]
+.\" Unused names: [GJKLOPQRUVZ][a-z]
+.\" Used names:
+.\"   macros
+.\"	+d +m Ad Ae Am Be Bh Bo Bs Bt Dd Di Ea Fd Ft Hd Id Ih In Sr Sw
+.\"   user supplied macro
+.\"	Cd
+.\"   strings
+.\"	1a 2a 3a 4a 5a 6a Ax Ba Bi Bl Da Df Ds Du
+.\"	Ib Ml Ms Nm Ta Tn To Tx Wl Ws
+.\"	[-/][A-Yb-y] _[a-fik-w]
+.\"   registers
+.\"	Cf Dy Mo Wd Wk Wn Wy Yr
+.\" Berkeley .AM names matching [A-Z][a-z]:
+.\"	Ae Oe Sd Th Tp
+.\" Internal names:
+.\"   macros
+.\"	;a	Broken to absolute date
+.\"	;b	Absolute to broken date
+.\"	;c	Print footer column
+.\"	;d	Set date
+.\"	;e	Implementation of .Be
+.\"	;f	Set ;l and FM
+.\"	;l	Print footer line
+.\"	;m	Maximum (;w helper)
+.\"	;n	Normalise absolute date
+.\"	;w	Set ;w to maximum width
+.\"	;y	Absolute date to years + year days
+.\"	;z	Original .AM
+.\"   strings
+.\"	;p	Invoice page number (footer, .BT)
+.\"   registers
+.\"	;a	Absolute date mod 400 years
+.\"	;b	Absolute date / 400 years
+.\"	;d	Year days
+.\"	;f	Saved FM
+.\"	;g	Index for /[A-Z]
+.\"	;h	Saved horizontal position (.Bo &c.)
+.\"	;j	No. of lines in footer (left)
+.\"	;k	No. of lines in footer (right)
+.\"	;l	No. of lines in footer
+.\"	;o	Box flags
+.\"	;p	Vertical position of next box
+.\"	;q	Index for _[A-Za-z] and /[a-z]
+.\"	;r	Maxiumu left title string width (footer)
+.\"	;s	Maxiumu left value string width (footer)
+.\"	;t	Top vertical position below address
+.\"	;u	Maxiumu right title string width (footer)
+.\"	;v	Saved vertical position (.Bo &c.)
+.\"	;w	Maxiumu right value string width (footer)
+.\"	;x	Temporary register
+.\"	;y	Years
+.\"	;z	.Ae called
+.\" =============================================================
+.\" defaults
+.\" =============================================================
+.\" header, footer
+.ds _i Invoice
+.ds _d Date:
+.ds _e Due date:
+.ds _m Payment details
+.ds _n Name:
+.ds _a Address:
+.ds _b \s-1IBAN\s0:
+.ds _k Bank:
+.ds _c \s-1BIC\s0:
+.ds _l \s-1BLZ\s0:
+.ds _f Tax number:
+.\" invoice table
+.ds _o Description
+.ds _p Price (\s-1\\*(Cu\s0)
+.ds _q Quantity
+.ds _r Amount (\s-1\\*(Cu\s0)
+.ds _s Subtotal
+.ds _t Total
+.ds _u Net total
+.ds _v \s-1VAT\s0
+.ds _w Total \s-1VAT\s0
+.\" long months
+.ds -A January
+.ds -B February
+.ds -C March
+.ds -D April
+.ds -E May
+.ds -F June
+.ds -G July
+.ds -H August
+.ds -I September
+.ds -J October
+.ds -K November
+.ds -L December
+.\" long weekdays
+.ds -M Monday
+.ds -N Tuesday
+.ds -O Wednesday
+.ds -P Thursday
+.ds -Q Friday
+.ds -R Saturday
+.ds -S Sunday
+.\" short months
+.ds -a Jan
+.ds -b Feb
+.ds -c Mar
+.ds -d Apr
+.ds -e May
+.ds -f Jun
+.ds -g Jul
+.ds -h Aug
+.ds -i Sep
+.ds -j Oct
+.ds -k Nov
+.ds -l Dec
+.\" short weekdays
+.ds -m Mon
+.ds -n Tue
+.ds -o Wed
+.ds -p Thu
+.ds -q Fri
+.ds -r Sat
+.ds -s Sun
+.\" footer configuration
+.\" a: title
+.ds /A \fB\\*(_m\fP
+.\" B-M: titles left
+.ds /C \\*(_n
+.ds /F \\*(_b
+.ds /G \\*(_k
+.ds /H \\*(_c
+.ds /I \\*(_l
+.\" b-m: values left
+.ds /c \\*(Nm
+.ds /f \fC\\*(Ib\fP
+.ds /g \\*(Ba
+.ds /h \s-1\\*(Bi\s0
+.ds /i \\*(Bl
+.\" N-Y: titles right
+.ds /N \\*(_f
+.ds /R \\*(_a
+.\" n-y: values right
+.ds /n \fC\\*(Tn\fP
+.ds /o \\*(Ta
+.ds /r \\*(1a
+.ds /s \\*(2a
+.ds /t \\*(3a
+.ds /u \\*(4a
+.ds /v \\*(5a
+.ds /w \\*(6a
+.\" Paid display position
+.nr ;p 4.7c
+.\" Top position (below the address display)
+.nr ;t 10.5c
+.\" =============================================================
+.\" module: dates
+.\" =============================================================
+.af Yr 0001
+.af Mo 01
+.af Dy 01
+.af Wy 0001
+.af Wk 01
+.\" Date format and date separator.  Default: dd.mm.yyyy
+.ds Df \\n(Dy\\*(Ds\\n(Mo\\*(Ds\\n(Yr
+.ds Ds .
+.de Di  \" ISO date: set format and separator to yyyy-mm-dd
+.ds Df \\\\n(Yr\\\\*(Ds\\\\n(Mo\\\\*(Ds\\\\n(Dy
+.ds Ds -
+..
+.de ;a	\" date to absolute day: Yr Mo Dy -> ;a ;b
+.nr ;x \\n(Mo+9
+.nr ;a \\n(Yr-1+(\\n(;x/12)
+.nr ;b \\n(;a/400
+.nr ;a \\n(;a%400
+.nr ;a (\\n(;a*365)+(\\n(;a/4)-(\\n(;a/100)+(\\n(;x%12*153+2/5)-1+\\n(Dy
+..
+.de ;y  \" absolute day to years and days: ;a ;b -> \\$1 ;d
+.\" centuries (0-3)
+.nr \\$1 \\n(;a/36524
+.nr \\$1 -\\n(\\$1/4
+.nr ;d \\n(;a-(\\n(\\$1*36524)
+.\" 4 year cycles
+.nr \\$1 \\n(;b*4+\\n(\\$1*100+(\\n(;d/1461*4)
+.\" years (0-3)
+.nr ;d \\n(;d%1461*1465+3/1461
+.nr \\$1 +\\n(;d/366
+.nr ;d \\n(;d%366
+..
+.de ;b  \" day to broken up date: ;a ;b -> Y M D
+.;y Yr
+.\" months
+.nr Dy \\n(;d*2141+132377
+.\" .nr Mo \\n(Dy/65536
+.\" .nr Yr \\n(;y+(\\n(Mo/12)
+.\" .nr Mo \\n(Mo%12+1
+.nr Yr +(\\n(Dy/786432)
+.nr Mo \\n(Dy/65536%12+1
+.nr Dy \\n(Dy%65536/2141+1
+..
+.de ;n  \" .;n qq rr div +-add  add $4 to $2, normalise $1, $2 mod $3
+.nr \\$2 \\$4
+.nr \\$1 +\\n(\\$2/\\$3
+.nr \\$2 0\\n(\\$2%\\$3
+.if -\\n(\\$2 \{\
+.	nr \\$1 -1
+.	nr \\$2 +\\$3 \}
+..
+.de +m  \" .+m months [years]  add months and years to date, cap day
+.\" .nr Mo +\\$1-1
+.\" .nr Yr +\\n(Mo/12+0\\$2
+.\" .nr Mo (\\n(Mo)%12+1
+.\" .if !\\n(Mo \{\
+.\" .	nr Yr -1
+.\" .	nr Mo +12 \}
+.;n Yr Mo 12 +0\\$2*12+\\$1-1
+.nr Mo +1
+.ie !\\n(Mo==2 .nr ;x \\n(Mo*9/8%2+30
+.el .nr ;x \\n(Yr%4:(\\n(Yr%100==0&(\\n(Yr%400))==0+28
+.if \\n(Dy-\\n(;x .nr Dy \\n(;x
+..
+.de +d  \" .+d [days]  add days to date
+.;a
+.;n ;b ;a 146097 +\\$1
+.;b
+..
+.de ;d  \" .;d [year month day]  set date to arguments or to today
+.ie '\\$3'' \{\
+.	nr Yr \\n(yr+1900
+.	nr Mo \\n(mo
+.	nr Dy \\n(dy \}
+.el \{\
+.	nr Yr \\$1
+.	nr Mo \\$2
+.	nr Dy \\$3 \}
+..
+.de Sw  \" .Sw year week day  set date to ISO week date $1-W$2-$3
+.nr Wy \\$1
+.nr Wk \\$2
+.nr Wd \\$3
+.nr ;b \\n(Wy-1/400
+.nr ;a \\n(Wy-1%400
+.nr ;a (\\n(;a*365)+(\\n(;a/4)-(\\n(;a/100)+301
+.nr ;a +\\n(Wk*7+\\n(Wd-(\\n(;a+3%7)
+.;b
+..
+.\" .Sr  set date-related strings and registers:
+.\" Wy, Wk and Wd to ISO week date
+.\" Ws and Wl to short and long weekday name
+.\" Ms and Ml to short and long month name
+.de Sr
+.;a
+.nr Wd \\n(;a+2%7+1
+.nr ;a -\\n(Wd+302
+.if -\\n(;a \{\
+.	nr ;b -1
+.	nr ;a +146097 \}
+.;y Wy
+.nr Wy +1
+.nr Wk \\n(;d/7+1
+.nr ;q \\n(Wd+12
+.af ;q a
+.ds Ws \\*(-\\n(;q
+.af ;q A
+.ds Wl \\*(-\\n(;q
+.nr ;q \\n(Mo
+.ds Ml \\*(-\\n(;q
+.af ;q a
+.ds Ms \\*(-\\n(;q
+..
+.de Fd  \" .Fd string  format date
+.Sr
+.ds \\$1 \\*(Df
+..
+.de Dd  \" set due date
+.Fd Du
+..
+.\" .Id inv-date [due-date]
+.\" .Id [inv-year inv-month inv-day [due-year due-month due-day]]
+.\" set invoice dates
+.de Id
+.ie \\n(.$%3==0 \{\
+.	;d \\$1 \\$2 \\$3
+.	Fd Da
+.	ie '\\$6'' \{\
+.		ds Du
+.		Cd \}
+.	el \{\
+.		;d \\$4 \\$5 \\$6
+.		Dd \}\}
+.	;d \\$1 \\$2 \\$3
+.el \{\
+.	ds Da \\$1
+.	ds Du \\$2\}
+..
+.\" =============================================================
+.\" module: footer
+.\" =============================================================
+.de ;m
+.nr ;g +1
+.nr ;q +1
+.nr ;x \w'\\*(/\\n(;q'
+.\" .nr /\\n(;q \\n(;x
+.if \\n(;x \{\
+.	if \\n(;x-\\n(\\$2 .nr \\$2 \\n(;x
+.	nr ;x \w'\\*(/\\n(;g'
+.\" .	nr /\\n(;g \\n(;x
+.	if \\n(;x-\\n(\\$1 .nr \\$1 \\n(;x
+.	nr \\$3 +1 \}
+..
+.de ;w
+.nr \\$1 0
+.nr \\$2 0
+.nr \\$3 0
+.;m \\$1 \\$2 \\$3  \" 1
+.;m \\$1 \\$2 \\$3  \" 2
+.;m \\$1 \\$2 \\$3  \" 3
+.;m \\$1 \\$2 \\$3  \" 4
+.;m \\$1 \\$2 \\$3  \" 5
+.;m \\$1 \\$2 \\$3  \" 6
+.;m \\$1 \\$2 \\$3  \" 7
+.;m \\$1 \\$2 \\$3  \" 8
+.;m \\$1 \\$2 \\$3  \" 9
+.;m \\$1 \\$2 \\$3  \" 10
+.;m \\$1 \\$2 \\$3  \" 11
+.;m \\$1 \\$2 \\$3  \" 12
+.nr \\$1 +2n
+..
+.de ;f
+.nr ;f \\n(FM
+.nr ;g 1
+.nr ;q 1
+.af ;g A
+.af ;q a
+.;w ;r ;s ;j
+.ie t .;w ;u ;w ;k
+.el \{\
+.	nr ;r -2n
+.	;w ;r ;s ;j \}
+.nr ;l \\n(;j
+.if \\n(;k-\\n(;l .nr ;l \\n(;k
+.if \\n(;r+\\n(;s+\\n(;u+\\n(;w+2n-\\n(.l .tm \\n(.F:\\n(.c: footer is too wide
+.if n .nr ;u \\n(;r
+.nr FM \\n(;lv+2v
+..
+.de ;l
+.nr ;g +1
+.nr ;q +1
+.\" .if \w'\\*(/\\n(;q' \
+.\" \\*(/\\n(;g\h'-\w'\\*(/\\n(;g'u+\\$1'\
+.\" \\*(/\\n(;q\h'-\w'\\*(/\\n(;q'u-\\$1'\v'1'\c
+.if \w'\\*(/\\n(;q' \
+\\*(/\\n(;g\h'|\\$1'\\*(/\\n(;q\h'|0'\v'1'\c
+.\" \k(;x\\*(/\\n(;g\h'|\\n(;xu+\\$1'\\*(/\\n(;q\h'|\\n(;xu'\v'1'\c
+..
+.de ;c
+.;l \\$1 \" 1
+.;l \\$1 \" 2
+.;l \\$1 \" 3
+.;l \\$1 \" 4
+.;l \\$1 \" 5
+.;l \\$1 \" 6
+.;l \\$1 \" 7
+.;l \\$1 \" 8
+.;l \\$1 \" 9
+.;l \\$1 \" 10
+.;l \\$1 \" 11
+.;l \\$1 \" 12
+..
+.de Ft
+.;f
+.if \\n(.d .bp
+.Be
+.ds ;p \\n%
+.nr ;g 1
+.nr ;q 1
+\h'-\\n(.ku'\v'\\n(.pu-\\n(.du-\\n(FMu+1.1'\z\l'\\n(.lu'\v'0.9'\c
+.\" \z\l'\\n(.lu'\v'0.9'\\*(/A\h'-\w'\\*(/A'u'\v'1'\c
+\\*(/A\h'|0u'\v'1'\c
+.;c \\n(;ru
+.if t \v'-\\n(;j-1'\h'\\n(.lu-\\n(;uu-\\n(;wu-1n'\z\L'\\n(;l'\v'1'\h'1n'\c
+.;c \\n(;uu
+.sp |\\n(HMu
+.nr FM \\n(;f
+..
+.rn BT Bt
+.de BT
+.if !'\\n%'\\*(;p' .Bt
+..
+.\" =============================================================
+.\" module: box
+.\" =============================================================
+.\" \n(;o bits:
+.\"	1	DS/DE active
+.\"	2   B	B1/B2
+.\"	4	restore position
+.\"	8   R	right justified
+.\"	16  C	centered
+.\" placement:
+.\"	""	right of address
+.\"	L	top left corner
+.\"	A	above address
+.\"	T	top, centered
+.\"	I	top right corner (invoice block)
+.de Bo  \" .Bo [CR]?[B]? [LATI]?
+.Be
+.nr ;o 4+1
+.ie     '\\$1'B'  .nr ;o +2
+.el .ie '\\$1'R'  .nr ;o +8
+.el .ie '\\$1'RB' .nr ;o +8+2
+.el .ie '\\$1'C'  .nr ;o +16
+.el .ie '\\$1'CB' .nr ;o +16+2
+.el .if !'\\$1''  .tm \\n(.F:\\n(.c: invalid .Bo argument: \\$1
+.nr ;v \\n(.d
+.nr ;h \\n(.k
+.sp |\\n(;pu
+.ie \\n(;o/8%4 \{\
+.	ie \\n(;o/8%2 .DS R
+.	el            .DS C
+.	in +9.5c \}
+.el .DS I 9.5c
+.ie \\n(;o/2%2 \{\
+.	B1
+.	sp 0.2 \}
+.el \{\
+.	in +1n
+.	ll -1n \}
+.\" .ie \\n(;o/16%2 .ce 9999
+..
+.de Bh
+.ps 20
+.vs 20
+.sp 5p
+.B
+.if !\\n(;o/16%2 .ce
+\v'-21p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'2p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'25p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'2p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'-8p'\|\^\\$1\|\^
+.sp 10p
+.ps
+.vs
+.ft
+..
+.de Bs
+.sp -0.5
+\l'\\n(.lu-\\n(.iu-\\n(.ku'
+..
+.de Be
+.\" \&\c
+.LP       \" troll -ms so it forgets the space before .TL
+.\" .sp -1.3  \" return to previous position
+.rn ;e Be
+.\" .Be
+..
+.de ;e
+.if \\n(;o \{\
+.	sp 0.3
+.	if \\n(;o/2%2 .B2
+.	DE
+.	sp +0.5c-0.5
+.	if \\n(.d-\\n(;t .nr ;t \\n(.d
+.	sp -0.5c
+.	if \\n(.d-\\n(;p .nr ;p \\n(.d
+.	if \\n(;o/4%2 \{\
+.		sp |\\n(;vu
+\h'|\\n(;hu'\c\}
+.	nr ;o 0 \}
+..
+.\" =============================================================
+.\" module: header
+.\" =============================================================
+.de Hd	\" Start header display, print $1
+.Be
+.DS R
+.nr ;o 5
+.nr ;v \\n(HMu
+.ps 16
+.if !'\\$1'' .B "\\$1"
+.ps
+..
+.de Ih  \" print invoice header "Invoice $1" with date & due date fields
+.Hd "\\*(_i \\$1"
+.if !'\\*(Da'' \\*(_d \\*(Da
+.if !'\\*(Du'' \\*(_e \\*(Du
+..
+.de In
+.Id \\$2 \\$3 \\$4 \\$5 \\$6 \\$7
+.Ft
+.Ih "\\$1"
+..
+.\" =============================================================
+.\" module: address block
+.\" =============================================================
+.de Ad
+.Be
+.LP
+\&
+.\" .sp -0.5
+.\" .if \\n(.d-\\n(;p .nr ;p \\n(.d
+.\" .if \\n(.d-\\n(;t .nr ;t \\n(.d
+.if t .vs 0
+.sp |5.5c
+.if !(\\n(Cf/2%2) \v'-0.2c'\D'l 0 -0.3c'\D'l 0.3c 0'\
+\h'8.4c'\D'l 0.3c 0'\D'l 0 0.3c'\
+\v'4.4c'\D'l 0 0.3c'\D'l -0.3c 0'\
+\h'-8.4c'\D'l -0.3c 0'\D'l 0 -0.3c'\c
+.if n .sp -1
+.DS I 0.5c
+.ll 8c
+.ft CB
+.ps 6
+.vs 6
+.ie \\n(Cf%1 \{\
+.sp 2
+\\*(Nm\fC\c
+.if !'\\*(1a'' , \\*(1a\c
+.if !'\\*(2a'' , \\*(2a\c
+.if !'\\*(3a'' , \\*(3a\c
+.if !'\\*(4a'' , \\*(4a\c
+.if !'\\*(5a'' , \\*(5a\c
+.if !'\\*(6a'' , \\*(6a\c
+\}
+.el \{\
+.sp -1
+.if '\\*(2a'' .sp
+.if '\\*(3a'' .sp
+\\*(Nm
+.ft C
+\\*(1a
+.if !'\\*(2a'' \\*(2a
+.if !'\\*(3a'' \\*(3a
+.if !'\\*(4a'' \\*(4a
+.if !'\\*(5a'' \\*(5a
+.if !'\\*(6a'' \\*(6a
+.\}
+\u\l'8c'
+.ps 10
+.vs 10
+.sp 0.5
+.ft CB
+\\$1
+.ft C
+..
+.de Ea
+.DE
+.if \\n(;t-\\n(.d .sp |\\n(;tu
+.Am
+..
+.de Ae
+.Ea
+..
+.\" =============================================================
+.\" module: Berkeley .AM compatibility
+.\" =============================================================
+.rn AM ;z
+.de AM
+.tm \\n(.F:\\n(.c: Error: .AM before .Ae
+.tm \\n(.F:\\n(.c: To resolve the issue, invoke .Am to choose
+.tm \\n(.F:\\n(.c: the behaviour of .AM.  After ".Am keep",
+.tm \\n(.F:\\n(.c: .AM keeps .Ae and makes \\\\*(Ae available as \\\\*(Ax.
+.tm \\n(.F:\\n(.c: Otherwise .AM functions as usual and .Ea must
+.tm \\n(.F:\\n(.c: be used instead of .Ae.
+.ab \\n(.F:\\n(.c: Aborting
+..
+.de Am
+.rn ;z AM
+.if '\\$1'keep' \{\
+.am AM ..
+.ds Ax \\\\*(Ae
+.de Ae ;.
+.Ea
+.;.
+... \}
+.rm Am
+..
