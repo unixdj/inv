@@ -277,7 +277,7 @@ line up 0.05 invis
 .CW
 arrow from 0.65 <Start.s, Start.e> down moveht \
 	then right 0.4 * movewid
-Tl: box ".Tl"
+Tl: box "\s9.Tl safe\s0"
 arrow from 0.4 <Tl.ne, Tl.se> 2 * boxwid 2.7 * movewid \
 	then down 2.5 * moveht \
 	then left 3 * boxwid 3 * movewid \
