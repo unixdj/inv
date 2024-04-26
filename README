@@ -1,12 +1,16 @@
-Invoice Generator
+Invoice Generator and Troff Macros for Writing Letters
 
 Copyright (c) 2024 Vadim Vygonets <vadik@vygo.net>
 
 The invoice generator is a document preprocessor and a troff
-macro package for invoices and letters.  The inv preprocessor
-turns a list of billed items into tbl source.  The -minv macro
-package, built on top of -ms macros, formats the first page of a
-letter, optionally including invoice-related information.
+macro package for invoices.  The inv preprocessor turns a list
+of billed items into tbl source.  The −minv macro package
+provides facilities for invoice headers and footers and date
+manipulation in letters written using −ms and −mail macros.
+
+The −mail troff macro package is an add‐on to −ms for writing
+letters.  The macros provide facilities for formatting the
+address block and using the limited space around it.
 
 Example invoice source:
 
@@ -19,13 +23,13 @@ Example invoice source:
     .Charge 100 8 Hours Mindless keyboard bashing
     .Charge 50 2 Hours Playing with oscilloscopes
 
-== Documentation:
+== Documentation
 
-To build doc/manual.pdf run:
+To build doc/manual.pdf and doc/using-mail.pdf run:
 
-    cd doc && make
+    make -C doc
 
-== Quick start
+== Quick start: invoice
 
     cp inc/conf-example.t inc/conf.t
     $EDITOR inc/conf.t
@@ -37,14 +41,35 @@ To build doc/manual.pdf run:
     $EDITOR file.ms
     make file.pdf
 
-== inc/Makefile
+Permanent setup:
+
+    mkdir ~/.inv
+    cp inc/inv inc/tmac.inv inc/tmac.ail ~/.inv
+    cp inc/conf-example.t ~/.inv/conf.t
+    $EDITOR ~/.inv/conf.t
+    # in your shell startup file:
+    export INVDIR=$HOME/.inv
+
+== Quick start: -mail
+
+The above will also work for letters.  If you don't plan to
+generate invoices, use the simpler setup below.
+
+    mkdir dir
+    cd dir
+    cp ../mail/Makefile ../mail/conf.t .
+    $EDITOR conf.t
+    cp ../examples/letter.ms file.ms
+    $EDITOR file.ms
+    make file.pdf
+
+Permanent setup:
+
+    mkdir ~/.ail
+    cp inc/tmac.ail mail/conf.t ~/.ail
+    $EDITOR ~/.ail/conf.t
+
+== inc/Makefile and mail/Makefile
 
 The default make target builds a .pdf for every .ms file in the
 directory.  The clean target is intentionally commented out.
-
-== Directory structure
-
-Everything needed to build invoices is in the inc directory.
-Keeping your invoices in this tree is silly, so symlink, copy,
-point the $INVDIR environment variable to it or edit the Makefile
-as you see fit.

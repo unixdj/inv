@@ -19,11 +19,14 @@
 .ds Ta Finanzamt of Love and Kittens
 .\" Default currency
 .ds Cu EUR
-.\" Print sender address on one line
+.\" Print compact sender address, change separator to a bullet
 .\" .nr Cf 1
-.\" Currency format (optional)
+.\" .ds _h " \(bu \"
+.\" Print fold lines
+.\" .nr Cf +2
+.\" Currency format
 .\" .Set fmt %.2f
-.\" Default tax rate (optional)
+.\" Default tax rate
 .\" .Set tax 0
 .\" Footer customusation:
 .\" If the footer is too wide, printing the IBAN in regular font might help.

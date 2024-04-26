@@ -1,0 +1,23 @@
+#!/bin/sh
+awk ' # doclean
+#   Input: string (blanks and tab) number
+#   Output: string (tab) number
+
+BEGIN {
+	FS = OFS = "\t"
+}
+
+$0 !~ /^ix: / {
+	print "doclean: non index line: " $0 | "cat 1>&2"; next
+}
+
+/CONTENTS/ {
+	next
+} # CONT. marks table of contents stuff
+
+{
+	sub(/^ix: /, "", $1)  # rm leading "ix: "
+	sub(/ +$/, "", $1)    # rm trailing blanks
+	print
+}
+' $*

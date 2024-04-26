@@ -1,6 +1,6 @@
 .In 2024001 29.02.2024
 .Ad "Client GmbH"
-Geile Str. 0
+Geile Stra\(sse 0
 00000 Gutdorf
 .Ae
 .Tax 19

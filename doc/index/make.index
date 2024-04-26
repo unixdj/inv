@@ -1,0 +1,14 @@
+#!/bin/sh
+./doclean $* >foo1
+./deroman foo1 >foo2
+./range.prep foo2 >foo3
+./range.sort foo3 >foo4
+./range.collapse foo4 >foo5
+./reroman foo5 >foo6
+./num.collapse foo6 >foo7
+./rotate foo7 >foo8
+./gen.key foo8 >foo9
+./final.sort foo9 >junk.regular
+./see.prep see.terms | ./gen.key | ./final.sort >junk.see
+sort -mfd junk.see junk.regular | ./format >junk.all
+cat index.head junk.all

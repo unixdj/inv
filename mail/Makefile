@@ -1,14 +1,12 @@
-INVDIR	?= ../inc
-INVCONF	?= conf.t
-INVPATH	?= .:inc:${INVDIR}
-INV	= ${INVDIR}/inv
-MACROS	= -M${INVDIR} -ms -mail -minv
+AILCONF	?= conf.t
+AILPATH	?= .:inc:../inc:${HOME}/.ail
+MACROS	= -M${AILPATH} -ms -mail
 PRINTER	= ps
 PAPER	= -P-pa4 -dpaper=a4
 ROFF	= groff -T${PRINTER} -m${PRINTER} ${PAPER} ${MACROS} ${PAGES}
 NROFF	= nroff -c -Tutf8 ${MACROS} ${PAGES}
 SOELIM	= soelim
-SOFLAGS	= -I ${INVPATH}
+SOFLAGS	= -I ${AILPATH}
 SRCS	:= $(shell echo *.ms)
 PSS	= ${SRCS:.ms=.ps}
 PDFS	= ${SRCS:.ms=.pdf}
@@ -23,10 +21,10 @@ all: ${PDFS}
 .DELETE_ON_ERROR: *
 
 .ms.ps:
-	${SOELIM} ${SOFLAGS} ${INVCONF} $< | ${INV} | tbl | ${ROFF} >$@
+	${SOELIM} ${SOFLAGS} ${AILCONF} $< | ${ROFF} >$@
 
 .ms.txt:
-	${SOELIM} ${SOFLAGS} ${INVCONF} $< | ${INV} | tbl | ${NROFF} >$@
+	${SOELIM} ${SOFLAGS} ${AILCONF} $< | ${NROFF} >$@
 
 .ps.pdf:
 	ps2pdf $<

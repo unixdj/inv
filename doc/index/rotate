@@ -1,0 +1,21 @@
+awk ' # rotate
+#   Input: string [%key sort key] (tab) numlist
+#   Output: several rotations of string (tab) [key] (tab) numlist(with commas)
+BEGIN { FS = OFS = "\t" }
+{	# convert page page page into page, page, page
+	# ought to be in num.collapse
+	gsub(/ /, ", ", $2)
+# commas between page numbers
+}
+/ %key / { i = index($1, " %key ")
+	print substr($1, 1, i-1), substr($1, i+6), $2
+	next
+}
+{ print $1, "", $2
+	i = 1
+	while ((j = index(substr($1, i+1), " ")) > 0) {
+		i += j
+		printf("%s, %s\t\t%s\n", substr($1, i+1), substr($1, 1, i-1), $2)
+	}
+}
+' $*

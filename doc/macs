@@ -1,0 +1,321 @@
+.de Sc
+\\$3\s-1\\$1\s0\\$2
+..
+.de Qu
+\\$3\(lq\\$1\(rq\\$2
+..
+.de Cq
+.CW "\\$1" "\(rq\\$2" "\\$3\(lq"
+..
+.de Cb
+\\$3\f(CB\\$1\fP\\$2
+..
+.de Ic
+\\$5\fC\\$3\fP\f(CI\\$1\fP\fC\\$2\fP\\$4
+..
+.de Ma
+.IP "\f(CB\\$1 \fI\\$2"
+..
+.EQ
+delim ``
+define sp 'sub p'
+define si 'sub i'
+define sj 'sub j'
+define ss 'sub S'
+define sti 'sub t si'
+define sv 'sub V'
+define sx 'sub X'
+define fin 'from i=1 to n'
+define mm '^ roman "mm"'
+define um '^ mu roman "m"'
+define nm '^ roman "nm"'
+define pt '^ roman "pt"'
+define u  '^ font C "u"'
+define in '^ roman "in"'
+.EN
+.de <-
+\z\D'l 0.3c -0.05c'\z\D'l 0.3c 0.05c'\c
+..
+.de ->
+\z\D'l -0.3c -0.05c'\z\D'l -0.3c 0.05c'\c
+..
+.de |^
+\z\D'l -0.05c 0.3c'\z\D'l 0.05c 0.3c'\c
+..
+.de |v
+\z\D'l -0.05c -0.3c'\z\D'l 0.05c -0.3c'\c
+..
+.de --
+\D'l \\$1c/20u 0'\c
+.ps 9
+.if !'\\$2'' \k(Xk\v'-3p'\h'-\w'\\$2'u/2u'\\$2\v'3p'\h'|\n(Xku'\c
+.ps
+\D'l \\$1c/20u 0'\c
+..
+.de <>
+.<-
+.-- \\$1 "\\$2"
+.->
+..
+.de ||
+\D'l 0 \\$1c/20u'\c
+.\" .ps 9
+\k(Xk\v'3p'\s9\|\\$2\s0\v'-3p'\h'|\n(Xku'\c
+.\" .ps
+\D'l 0 \\$1c/20u'\c
+..
+.de ^v
+.|^
+.|| \\$1 "\\$2"
+.|v
+..
+.de ^F
+.|^
+\D'l 0 \\$1c/20u'\c
+\k(Xk\s(36\D'l 0 0'\s0\D'l 10p 5p'\z\D'l \w'\s9\\$2\|\s0'u 0'\v'-2p'\s9\\$2\s0\v'-3p'\h'|\n(Xku'\c
+\D'l 0 \\$1c/20u'\c
+.|v
+..
+.de z|
+\z\D'l 0 -\\$1c/10u'\z\D'l 0 \\$2c/10u'\c
+..
+.de z-
+\z\D'l -\\$1c/10u 0'\z\D'l \\$2c/10u 0'\c
+..
+.\" .[] w h x y "string"
+.de []
+.sp |\\$4c/10u
+\h'\\$3c/10u-\\n(.ou'\c
+.ie '\\$5'' \h'(\\$1c/10u)'\c
+.el         .-- \\$1 "\\$5"
+.\" \D'l 0 \\$2c/10u'\D'l -(\\$1c/10u) 0'\D'l 0 -(\\$2c/10u)'\c
+\s8\z\D'l -0.4c 0'\z\D'l 0 0.4c'\s0\c
+.ie '\\$5'' \v'(\\$2c/10u)'\c
+.el         \D'l 0 \\$2c/10u'\c
+\s8\z\D'l -0.4c 0'\z\D'l 0 -0.4c'\s0\
+\h'-(\\$1c/10u)'\s8\z\D'l 0.4c 0'\z\D'l 0 -0.4c'\s0\
+\v'-(\\$2c/10u)'\s8\z\D'l 0.4c 0'\z\D'l 0 0.4c'\s0\c
+..
+.de Xp
+.nr ;i 0\\n(Ax*10/1c
+.nr ;s 0\\n(Ay*10/1c
+.nr ;u 0\\n(Aw*10/1c
+.nr ;v 0\\n(Ah*10/1c
+.nr ;z 0\\n(Ap*10/1c
+.nr ;x 0\\n(Fl*10/1c
+.nr ;y 0\\n(Fm*10/1c
+.tm ==== Addr at \\n(;i, \\n(;s sz \\n(;ux\\n(;v+\\n(;z Fold \\n(;x - \\n(;y
+.nr ;i 0\\n(Sx*10/1c
+.nr ;s 0\\n(Sy*10/1c
+.nr ;u 0\\n(Sw*10/1c
+.nr ;v 0\\n(Sh*10/1c
+.nr ;y 0\\n(Ar*10/1c
+.nr ;z 0\\n(Ab*10/1c
+.tm ---- Safety at \\n(;i, \\n(;s sz \\n(;ux\\n(;v area \\n(;yx\\n(;z
+..
+.de Xr
+.tm ==== Addr at \\n(Ax, \\n(Ay sz \\n(Awx\\n(Ah+\\n(Ap Fold \\n(Fl - \\n(Fm
+.tm ---- Safety at \\n(Sx, \\n(Sy sz \\n(Swx\\n(Sh
+..
+.de Xo
+.if \\n(;z-10 \{\
+.	nr ;z \\n(;z/2
+.	'G \\n(;z+\\n(;y
+.	if !0\\*('Xc-\\n(;x .nr ;y +\\n(;z
+.	Xo \}
+..
+.de Fs
+.nr ;x (\\$1)
+.if -\\n(;x .nr ;x 0-\\n(;x
+.nr ;x +0.00005c
+.nr ;y (\\n(;x)/1c
+.if \\n(;yc-\\n(;x .nr ;y -1
+.nr ;y 0\\n(;y*10000
+.\" .'G \\n(;y
+.nr ;z 10240
+.Xo
+.if -\\n(;x .nr ;y 0-\\n(;y
+.nr ;z 0\\n(;y/1000
+.ie \\n(;z=0&-\\n(;y .ds Sz -0
+.el                  .ds Sz \\n(;z
+.nr ;z 0\\n(;y%1000/10
+.if -\\n(;z .nr ;z 0-\\n(;z
+.if \\n(;z \{\
+.	ie \\n(;z<10  .as Sz .0
+.	el            .as Sz .
+.	if !\\n(;z%10 .nr ;z \\n(;z/10
+.	as Sz \\n(;z
+.\}
+..
+.de Xb
+.nf
+.vs 0
+.ps 1
+.[] \\n(Awu*10u+0 \\n(Ahu+\\n(Avu*10u+0 \\n(Axu*10u+0 \\n(Ayu*10u+0 \\$1
+\v'-1.2c'\h'-\\n(Axu'\c
+.Fs \\n(Axu
+.<> \\*(Sz "\fCAx\fP: \\*(Sz mm"
+.z| 2 14
+.Fs \\n(Awu
+.<> \\*(Sz "\fCAw\fP: \\*(Sz mm"
+.z| 2 12
+.sp |0
+\h'\\n(Axu+\\n(Awu+0.7c-\\n(.ou'\c
+.Fs \\n(Ayu
+.ie '\\$2'' .^v \\*(Sz "\fCAy\fP: \\*(Sz mm"
+.el \{\
+.|^
+.ds Xs \\*(Sz
+\D'l 0 \\n(HMu'\v'\\n(Syu-\\n(FMu'\c
+.Fs \\n(Sy
+.|| 10 "\fCAy\fP: \\*(Xs mm"
+.|| \\*(Xsc-\\*(Szc-10
+.|v
+.\}
+.z- 10 2
+.if !'\\$1'' .z- 0 30
+.Fs \\n(Ahu
+.^v \\*(Sz "\fCAh\fP: \\*(Sz mm"
+.if \\n(Avu \{\
+.	Fs \\n(Avu
+.	^v \\*(Sz "\fCAv\fP: \\*(Sz mm"
+.	z- 10 2
+\v'-\\n(Avu'\h'2c'\c
+.	z- 22 2 \}
+.z- 10 2
+.Fs \\n(Apu
+.^v \\*(Sz "\fCAp\fP: \\*(Sz mm"
+.\" .z- 10 10
+.z- \\n(Awu*10u-7 2
+.if \\n(Avu .-- -\\n(Awu*10u-27
+.\" .sp |\\n(Ayu+\\n(Ahu-0.5c
+.\" \v'-2c'\h'-1c-\\n(Axu-\\n(Awu'\c
+..
+.de Xf
+.sp |0
+.\" \h'0.5c-\\n(.ou'\c
+\h'\\n(.lu+\\n(.ou-2c'\c
+.'G \\n(;H
+.if \\*('Xc-\\n(Fl \{\
+.Fs \\n(Flu
+.^v \\*(Sz "\fCFl\fP: \\*(Sz mm"
+.z- 2 2
+.Fs \\n(Avu
+.if \\n(Av .^v \\*(Sz "\fCAv\fP: \\*(Sz mm"
+.z- 2 0
+.-- 11
+.->
+.-- -11
+.Fs \\n(Flu
+.^v \\*(Sz "\fCFl\fP: \\*(Sz mm"
+.z- 2 2
+.Fs \\n(Avu
+.if \\n(Av .^v \\*(Sz "\fCAv\fP: \\*(Sz mm"
+.z- 2 0
+.-- 11
+.->
+.sp |0
+\h'\\n(.lu+\\n(.ou-2.3c'\c
+.Fs \\n(Fmu
+.^F \\*(Sz "\fCFm\fP: \\*(Sz mm"
+.z- 2 0
+.-- 14
+.->
+.-- -14
+.z- 2 0
+.^F \\*(Sz "\fCFm\fP: \\*(Sz mm"
+.z- 2 0
+.-- 14
+.-> \}
+..
+.de Xl
+.Xb \&
+.\" .[] \\n(Swu*10u+0 \\n(Shu*10u+0 \\n(Sxu*10u+0 \\n(Syu*10u+0
+.\" .sp |\\n(Syu
+.\" \h'\\n(Sxu-\\n(.ou'\z\D'l 0 0.5c'\c
+.Fs \\n(Sx
+.ds Xx \\*(Sz
+.Fs \\n(Sy
+.ds Xy \\*(Sz
+.Fs \\n(Sw
+.ds Xz \\*(Sz
+.Fs \\n(Sh
+.[] \\n(Swu*10u+0 \\n(Shu*10u+0 \\n(Sxu*10u+0 \\n(Syu*10u+0 \
+"Safety area: \fCSw\fP\(mu\fCSh\fP at \fCSx\fP, \fCSy\fP \
+(\\*(Xz\(mu\\*(Sz at \\*(Xx, \\*(Xy)"
+.\" \D'l 0 \\n(Shu'\z\D'l -0.5c 0'\c
+.\" \v'-0.3c'\h'0.5c'\c
+.\" .z- 10 20
+.\" .ps 9
+.\" \k(Xk\h'0.4c'\v'-3p'gap: 5 mm\v'3p'\h'|\\n(Xku'\c
+.\" .ps 1
+.\" .<> -5
+.sp |\\n(Ayu-0.5c
+\h'\\n(Axu+\\n(Aiu-\\n(.ou'\c
+.z| 2 \\n(Ahu*10u-3
+.z- \\n(Aiu*10u-5 20
+.Fs \\n(Aiu
+.ps 9
+\k(Xk\h'0.4c'\v'-3p'\fCAi\fP: \\*(Sz mm\v'3p'\h'|\\n(Xku'\c
+.ps 1
+.<> -\\\n(Aiu*10u+0
+.\" \v'1.2c'\h'-\\n(Axu-\\n(Awu'\c
+.\" .sp |\\n(Ayu-0.7c
+.Xf
+.\" \h'-2c'\v'\\n(Syu-\\n(Fmu'\c
+.\" \v'-\\n(Fmu'\c
+.\" .-- 44
+.\" .->
+.\" .-- -14
+.\" .sp |\\n(Ayu+\\n(Ahu+\\n(Apu+0.5c
+.sp |2.7c
+\h'\\n(Sxu-\\n(.ou'\c
+.Fs \\n(Sxu
+.z- \\*(Sz 20
+.<-
+.ps 9
+\k(Xk\h'0.4c'\v'-3p'\fCSx\fP: \\*(Sz mm\v'3p'\h'|\\n(Xku'\c
+.ps 1
+\v'-0.5c'\c
+.z| 2 15
+.Fs \\n(Swu
+.\" .<> \\n(Sxu*10u+0 "\fCSx\fP: \\*(Sz mm"
+.<> \\*(Sz "\fCSw\fP: \\*(Sz mm"
+.\" .z| 50 2
+.z| 2 0
+.|| \\n(Ayu-3c*10u+0
+.-- 5
+.z| 2 10
+.z- 10 20
+.ps 9
+\k(Xk\h'0.4c'\v'-3p'gap: 5 mm\v'3p'\h'|\\n(Xku'\c
+.ps 1
+.<> -5
+.sp |0
+.\" \h'\\n(Axu-0.4c-\\n(.ou'\c
+.\" \h'\\n(.lu/2u-1c'\c
+.\" \h'\\n(.lu+0.2c'\c
+\h'0.5c-\\n(.ou'\c
+.Fs \\n(Syu
+.^v \\*(Sz "\fCSy\fP: \\*(Sz mm"
+.Fs \\n(Shu
+.^v \\*(Sz "\fCSh\fP: \\*(Sz mm"
+.\" .z- \\n(.ku*10u+0 2
+.\" .z- 2 30
+.z- 2 12
+\h'1c'\v'0.5c'\c
+.z- 2 \\n(.lu-\\n(.ku*10u+0
+.z| 10 5
+.|^
+.|| -5 "gap: 5 mm"
+.|v
+.sp |0
+\h'\\n(.lu-5c'\c
+.Fs \\n(HMu
+.^v \\*(Sz "Top margin (default \\*(Sz mm)"
+.\" .^v 25.4 "Top margin (default 25.4 mm)"
+.z- 2 50
+.br
+.ps 10
+.vs 12
+..

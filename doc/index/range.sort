@@ -1,0 +1,7 @@
+# range.sort
+#   Input/Output: string (tab) [b/e] (tab) number
+#   Sort by $1 (string), $3 (number), then $2 (string)
+
+#  this version doesn't work with page numbers like 4-56
+
+sort -u '-t	' +0 -1 +2n +1 -2 $*

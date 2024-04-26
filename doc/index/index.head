@@ -1,0 +1,33 @@
+.\" This version is for the -ms macro package.
+.\" if you use -mm, you will want to change .SH
+.\" to some form of .HU "heading", and .LP to .P 0.
+.\" the number registers PS and VS are different too.
+.
+.
+.\" .pn 999     \" page number for first page; set it to taste
+.de XX      \" this macro precedes each index term
+.br         \" break
+.ti -.2i    \" outdent first line of each entry
+.ne 2       \" need two lines for typical entry
+..
+.de YY      \" header between letters of the alphabet
+.sp 1.5     \" space 1.5 lines
+.\" .ne 3       \" need 3 lines on this page
+.ne 4       \" need 4 lines on this page
+.ce         \" center next output line
+- \\$1 -    \" print the letter
+.sp .5      \" space .5 line
+..
+.SH         \" provide heading
+Index
+.LP         \" text is coming
+.\" .nr PS 8    \" index looks better in small type
+.\" .nr VS 9    \" and small spacing
+.\" .MC 1.9i    \" 3 columns with default-size page
+.\" .nr PS 9    \" index looks better in small type
+.\" .nr VS 10    \" and small spacing
+.MC 4.6c    \" 3 columns with default LL/15 (10.6 mm) gap on A4
+.\" .2C         \" 2 columns with default-size page
+.na         \" no-adjust gives ragged right lines
+.in .2i     \" outdent first line by 0.2 inches
+.hy 0       \" don't hyphenate

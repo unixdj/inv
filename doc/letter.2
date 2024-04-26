@@ -1,0 +1,33 @@
+.\"C .2 files are processed into three versions:
+.\"C   - .t for sourcing
+.\"C   - .p for printing
+.\"C   - .e for examples
+.\"C - Lines beginning with ".S " or ".P " are source- or print-only.
+.\"C   The pattern is stripped, the rest of the line appears verbatim.
+.\"C - Lines beginning with .\"C are actual comments.  They are stripped
+.\"C   from .e targets.
+.\"C - On other lines, the following substitutions are done:
+.\"C Substitutions on other lines:
+.\"C	.2	.t	.p	.e
+.\"C	\	\	\e	\
+.\"C	.	.	\&.	.	beginning of line
+.\"C	'	'	\&'	'	beginning of line
+.\"C Except:
+.\"C	\E				eliminated
+.\"C	\S	\			source-only backslash
+.\"C	\P	\	\	\	preserved in .p
+.S .As "Humble Sender" "Street address" "00000 City" Country
+.P .As "Humble Sender" "Street address" "00000 City" Country
+.\"C .S .Be
+.\"C .S .ps 10
+.\"C .S .vs 12
+.Ad "Esteemed Recipient"
+Wherever you are
+We love you all the same
+.Ae
+.S .ps 10
+.S .vs 12
+.S .ll \\n(LLu
+.S .I
+.P .I
+Text of the letter, with \Pf(CI\P-ms\PfP macros and whatnot

@@ -1,6 +1,6 @@
 .\"C .2 files are processed into three versions:
-.\"C   - .t for sourcing
 .\"C   - .p for printing
+.\"C   - .t for sourcing
 .\"C   - .e for examples
 .\"C - Lines beginning with ".S " or ".P " are source- or print-only.
 .\"C   The pattern is stripped, the rest of the line appears verbatim.
@@ -8,48 +8,52 @@
 .\"C   from .e targets.
 .\"C - On other lines, the following substitutions are done:
 .\"C Substitutions on other lines:
-.\"C	.2	.t	.p	.e
-.\"C	\	\	\e	\
-.\"C	.	.	\&.	.	beginning of line
-.\"C	'	'	\&'	'	beginning of line
+.\"C	.2	.p	.t	.e
+.\"C	\	\e	\
+.\"C	.	\&.	.	.	beginning of line
+.\"C	'	\&'	'	'	beginning of line
 .\"C Except:
 .\"C	\E				eliminated
-.\"C	\S	\			source-only backslash
+.\"C	\S		\		source-only backslash
 .\"C	\P	\	\	\	preserved in .p
-.LP  \" \PfItroll \PfC-ms\PfI to reduce vertical spacing before \PfC.TL
-.TL
+.Tl safe
 Tama-densha gauge adjustment for the new Kishi \- Llanfairpg line
-.Bo B
-.\" \PfIdoodle on the margins\PfC
+.Bo LF
+.\" \PfIdoodle on the margins from the box\PfP
 .S .ie t \
-\h'\S\n(.lu-\S\n(.iu-\S\n(.ku'\v'-3'\D'e 6 3'\h'-5.2'\v'-1.05'\
+\h'\S\n(.lu-\S\n(.iu-\S\n(.ku-1'\v'-3'\D'e 6 3'\h'-5.2'\v'-1.05'\
 \D'l 0 -1.2'\D'l 1.2 0.85'\h'2'\D'l 1.2 -0.85'\D'l 0 1.2'\
 \h'-4.2'\v'0.7'\D'e 1.5 0.7'\h'-0.95'\D'e 0.4 0.7'\
 \h'1.55'\D'e 1.5 0.7'\h'-0.95'\D'e 0.4 0.7'\
 \h'-1.45'\v'0.4'\D'~ 0 0.5 -0.2 0.2 -0.4 -0.1 -0.1 -0.1'\
 \h'0.7'\v'-0.5'\D'~ 0 0.5 0.2 0.2 0.4 -0.1 0.1 -0.1'\
 \h'0.5'\z\l'3'\v'-0.2'\z\D'l 2.8 -0.5'\v'0.4'\z\D'l 2.8 0.5'\v'-0.2'\
-\h'-2.4'\z\l'-3'\v'-0.2'\z\D'l -2.8 -0.5'\v'0.4'\z\D'l -2.8 0.5'
-.S .el \h'\\n(.lu-\\n(.iu-\\n(.ku'\v'-3'\(==\(ha\(bu\(ha\(==
-.sp -1  \" \PfIback up one line\PfC
+\h'-2.4'\z\l'-3'\v'-0.2'\z\D'l -2.8 -0.5'\v'0.4'\z\D'l -2.8 0.5'\h'|0'
+.S .el \h'\\n(.lu-\\n(.iu-\\n(.ku'\v'-3'\(==\(ha\(bu\(ha\(==\h'-8m'
+.sp -1  \" \PfIback up one line\PfP
 Station: Kishi
-.S .if n \{\
-.S .fi
-.S .ad l \}
+.br
+.\"C .S .if n \{\
+.\"C .S .fi
+.\"C .S .ad l \}
 Gauge: 3 ft 6 in (1067 mm)
-.S .if n .br
-.Bs
-.fi  \" \PfIfill output lines\PfC
+.\"C .S .if n .br
+.Hs
+.\"C .fi    \" \PfIfill output lines\PfP
+.\"C .ad l  \" \PfIadjust left margin only\PfP
 Station: Llanfair\%pwllgwyngyll\%gogery\%chwyrn\%drobwll\%llan\%\
 tysilio\%gogo\%goch
-.S .ie t \
-.nf  \" \PfIdisable filling\PfC
-.S .el .br
+.br
+.\"C .S .ie t \
+.\"C .nf  \" \PfIdisable filling\PfP
+.\"C .S .el .br
 Gauge: standard (1435 mm)
+.S .if n .nr Av 1c
 .Ad "Station master Nitama"
 Kishi Station
 Wakayama Electric Railway
-3-4-32, Kishichou, Tondabayashi-shi,
+3-4-32, Kishichou
+Tondabayashi-shi
 Osaka-fu 584-0005
 Japan
 .Ae

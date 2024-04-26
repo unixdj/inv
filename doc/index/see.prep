@@ -1,0 +1,2 @@
+awk ' BEGIN { FS = "\t" }
+{ print $1 "\t" $1 "\t\\fIsee\\fP " $2 } ' $*

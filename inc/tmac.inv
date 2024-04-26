@@ -17,17 +17,28 @@
 .\" Unused names: [GJKLOPQRUVZ][a-z]
 .\" Used names:
 .\"   macros
-.\"	+d +m Ad Ae Am Be Bh Bo Bs Bt Dd Di Ea Fd Ft Hd Id Ih In Sr Sw
+.\"	+d +m Ad Ae Am Be Bh Bo Bt Dd Di En Fd Fo Ft Hd Hs
+.\"	Id Ih In Pa Sr We
+.\" Pa  paper
+.\" Ps  define named paper/envelope size
+.\" En  add envelope
+.\" Fo  set fold lines
 .\"   user supplied macro
 .\"	Cd
 .\"   strings
-.\"	1a 2a 3a 4a 5a 6a Ax Ba Bi Bl Da Df Ds Du
-.\"	Ib Ml Ms Nm Ta Tn To Tx Wl Ws
+.\"	1a 2a 3a 4a 5a 6a Af Ba Bi Bl Da Df Ds Du
+.\"	Ib Ml Ms Nf Nm Ta Tn To Tx Wl Ws
 .\"	[-/][A-Yb-y] _[a-fik-w]
 .\"   registers
-.\"	Cf Dy Mo Wd Wk Wn Wy Yr
+.\"	Ag Ah Ai Aj Al Ap Av Aw Ax Ay Cf Dy Fl Mo Wd Wk Wn Wy Sx Sy Yr
+.\" Ax Ay Aw Ah Ap	address box x/y/w/h and hplus (alias h(X))
+.\" Ai Aj Av		address indent and vertical extension
+.\" Al			address alignment
+.\" Sx Sy		safety x/y
+.\" Fl			fold line
 .\" Berkeley .AM names matching [A-Z][a-z]:
 .\"	Ae Oe Sd Th Tp
+.\"	Cf Dy Fl Mo Wd Wk Wn Wy Sx Sy Yr
 .\" Internal names:
 .\"   macros
 .\"	;a	Broken to absolute date
@@ -36,36 +47,64 @@
 .\"	;d	Set date
 .\"	;e	Implementation of .Be
 .\"	;f	Set ;l and FM
+.\"	;g
+.\"	;h
+.\"	;i
+.\"	;j
+.\"	;k	Print sender address line (.Ae)
 .\"	;l	Print footer line
 .\"	;m	Maximum (;w helper)
-.\"	;n	Normalise absolute date
-.\"	;w	Set ;w to maximum width
+.\"	;n	Add and normalise a modulo arithmetic value
+.\"	;o	;v helper
+.\"	;p	STRING
+.\"	;q	STRING
+.\"	;r	STRING
+.\"	;s	STRING
+.\"	;t	Format sender address (.Ae)
+.\"	;u	.En implementation
+.\"	;v	Set ;j, ;k to named paper or envelope size
+.\"	;w	Calculate maximum widths of footer fields and no. of lines
+.\"	;x
 .\"	;y	Absolute date to years + year days
 .\"	;z	Original .AM
 .\"   strings
 .\"	;p	Invoice page number (footer, .BT)
+.\"	;q	Last box or header page number (.Be)
+.\"	;r	Recipient address diversion (.Ad/.Ae)
+.\"	;s	Sender address diversion (.Ae)
 .\"   registers
 .\"	;a	Absolute date mod 400 years
 .\"	;b	Absolute date / 400 years
-.\"	;d	Year days
+.\"	;c
+.\"	;d
+.\"	;e
 .\"	;f	Saved FM
 .\"	;g	Index for /[A-Z]
-.\"	;h	Saved horizontal position (.Bo &c.)
+.\"	;h	Paper height (.Pa, .En)
+.\"	;i
 .\"	;j	No. of lines in footer (left)
+.\"		Paper/envelope width (paper)
 .\"	;k	No. of lines in footer (right)
+.\"		Paper/envelope heighth (paper)
 .\"	;l	No. of lines in footer
+.\"		Recipient address position
+.\"	;m
+.\"	;n
 .\"	;o	Box flags
 .\"	;p	Vertical position of next box
 .\"	;q	Index for _[A-Za-z] and /[a-z]
-.\"	;r	Maxiumu left title string width (footer)
-.\"	;s	Maxiumu left value string width (footer)
+.\"	;r	Maximum left title string width (footer)
+.\"		Disable length warnings (address)
+.\"	;s	Maximum left value string width (footer)
 .\"	;t	Top vertical position below address
-.\"	;u	Maxiumu right title string width (footer)
+.\"	;u
 .\"	;v	Saved vertical position (.Bo &c.)
-.\"	;w	Maxiumu right value string width (footer)
+.\"	;w	Paper width (.Pa, .En)
 .\"	;x	Temporary register
-.\"	;y	Years
-.\"	;z	.Ae called
+.\"	;y	Temporary register
+.\"		Maximum right title string width (footer)
+.\"	;z	Temporary register
+.\"		Maximum right value string width (footer)
 .\" =============================================================
 .\" defaults
 .\" =============================================================
@@ -81,6 +120,8 @@
 .ds _c \s-1BIC\s0:
 .ds _l \s-1BLZ\s0:
 .ds _f Tax number:
+.\" address
+.\" .ds _j , \"
 .\" invoice table
 .ds _o Description
 .ds _p Price (\s-1\\*(Cu\s0)
@@ -160,10 +201,14 @@
 .ds /u \\*(4a
 .ds /v \\*(5a
 .ds /w \\*(6a
-.\" Paid display position
-.nr ;p 4.7c
+.\" Font sizes
+.\" .nr Rs 10
+.\" .nr Ss 6
+.\" Box position
+.\" .nr ;p 5c
 .\" Top position (below the address display)
-.nr ;t 10.5c
+.\" .nr ;t 11c
+.\" .nr ;t 11.5c
 .\" =============================================================
 .\" module: dates
 .\" =============================================================
@@ -186,22 +231,22 @@
 .nr ;a \\n(;a%400
 .nr ;a (\\n(;a*365)+(\\n(;a/4)-(\\n(;a/100)+(\\n(;x%12*153+2/5)-1+\\n(Dy
 ..
-.de ;y  \" absolute day to years and days: ;a ;b -> \\$1 ;d
+.de ;y  \" absolute day to years and days: ;a ;b -> \\$1 \\$2
 .\" centuries (0-3)
 .nr \\$1 \\n(;a/36524
 .nr \\$1 -\\n(\\$1/4
-.nr ;d \\n(;a-(\\n(\\$1*36524)
+.nr \\$2 \\n(;a-(\\n(\\$1*36524)
 .\" 4 year cycles
-.nr \\$1 \\n(;b*4+\\n(\\$1*100+(\\n(;d/1461*4)
+.nr \\$1 \\n(;b*4+\\n(\\$1*100+(\\n(\\$2/1461*4)
 .\" years (0-3)
-.nr ;d \\n(;d%1461*1465+3/1461
-.nr \\$1 +\\n(;d/366
-.nr ;d \\n(;d%366
+.nr \\$2 \\n(\\$2%1461*1465+3/1461
+.nr \\$1 +\\n(\\$2/366
+.nr \\$2 \\n(\\$2%366
 ..
 .de ;b  \" day to broken up date: ;a ;b -> Y M D
-.;y Yr
+.;y Yr Dy
 .\" months
-.nr Dy \\n(;d*2141+132377
+.nr Dy \\n(Dy*2141+132377
 .\" .nr Mo \\n(Dy/65536
 .\" .nr Yr \\n(;y+(\\n(Mo/12)
 .\" .nr Mo \\n(Mo%12+1
@@ -245,7 +290,7 @@
 .	nr Mo \\$2
 .	nr Dy \\$3 \}
 ..
-.de Sw  \" .Sw year week day  set date to ISO week date $1-W$2-$3
+.de We  \" .We year week day  set date to ISO week date $1-W$2-$3
 .nr Wy \\$1
 .nr Wk \\$2
 .nr Wd \\$3
@@ -266,9 +311,9 @@
 .if -\\n(;a \{\
 .	nr ;b -1
 .	nr ;a +146097 \}
-.;y Wy
+.;y Wy Wk
 .nr Wy +1
-.nr Wk \\n(;d/7+1
+.nr Wk \\n(Wk/7+1
 .nr ;q \\n(Wd+12
 .af ;q a
 .ds Ws \\*(-\\n(;q
@@ -298,8 +343,8 @@
 .		Cd \}
 .	el \{\
 .		;d \\$4 \\$5 \\$6
-.		Dd \}\}
-.	;d \\$1 \\$2 \\$3
+.		Dd \}
+.	;d \\$1 \\$2 \\$3 \}
 .el \{\
 .	ds Da \\$1
 .	ds Du \\$2\}
@@ -311,11 +356,9 @@
 .nr ;g +1
 .nr ;q +1
 .nr ;x \w'\\*(/\\n(;q'
-.\" .nr /\\n(;q \\n(;x
 .if \\n(;x \{\
 .	if \\n(;x-\\n(\\$2 .nr \\$2 \\n(;x
 .	nr ;x \w'\\*(/\\n(;g'
-.\" .	nr /\\n(;g \\n(;x
 .	if \\n(;x-\\n(\\$1 .nr \\$1 \\n(;x
 .	nr \\$3 +1 \}
 ..
@@ -344,24 +387,22 @@
 .af ;g A
 .af ;q a
 .;w ;r ;s ;j
-.ie t .;w ;u ;w ;k
-.el \{\
-.	nr ;r -2n
-.	;w ;r ;s ;j \}
+.;w ;y ;z ;k
 .nr ;l \\n(;j
-.if \\n(;k-\\n(;l .nr ;l \\n(;k
-.if \\n(;r+\\n(;s+\\n(;u+\\n(;w+2n-\\n(.l .tm \\n(.F:\\n(.c: footer is too wide
-.if n .nr ;u \\n(;r
-.nr FM \\n(;lv+2v
+.ie t .if \\n(;k-\\n(;l .nr ;l \\n(;k
+.el \{\
+.	nr ;l +\\n(;k
+.	if \\n(;y-\\n(;r .nr ;r \\n(;y
+.	if \\n(;z-\\n(;s .nr ;s \\n(;z
+.	nr ;y 0
+.	nr ;z 0 \}
+.if \\n(;r+\\n(;s+\\n(;y+\\n(;z+2n-\\n(.l .tm \\n(.F:\\n(.c: footer is too wide
+.nr FM \\n(;lv+5v
 ..
 .de ;l
 .nr ;g +1
 .nr ;q +1
-.\" .if \w'\\*(/\\n(;q' \
-.\" \\*(/\\n(;g\h'-\w'\\*(/\\n(;g'u+\\$1'\
-.\" \\*(/\\n(;q\h'-\w'\\*(/\\n(;q'u-\\$1'\v'1'\c
-.if \w'\\*(/\\n(;q' \
-\\*(/\\n(;g\h'|\\$1'\\*(/\\n(;q\h'|0'\v'1'\c
+.if \w'\\*(/\\n(;q' \\*(/\\n(;g\h'|\\$1'\\*(/\\n(;q\h'|0'\v'1'\c
 .\" \k(;x\\*(/\\n(;g\h'|\\n(;xu+\\$1'\\*(/\\n(;q\h'|\\n(;xu'\v'1'\c
 ..
 .de ;c
@@ -380,117 +421,38 @@
 ..
 .de Ft
 .;f
-.if \\n(.d .bp
+.if \\n(.P .bp
 .Be
 .ds ;p \\n%
+.nr ;a \\n(.s
+.nr ;b \\n(.v
+.nr ;v \\n(.f
+.ps 10
+.vs 12
+.ft R
 .nr ;g 1
 .nr ;q 1
-\h'-\\n(.ku'\v'\\n(.pu-\\n(.du-\\n(FMu+1.1'\z\l'\\n(.lu'\v'0.9'\c
+\v'\\n(.pu-\\n(.du-\\n(FMu+1.1'\z\l'\\n(.lu'\v'0.9'\c
 .\" \z\l'\\n(.lu'\v'0.9'\\*(/A\h'-\w'\\*(/A'u'\v'1'\c
 \\*(/A\h'|0u'\v'1'\c
 .;c \\n(;ru
-.if t \v'-\\n(;j-1'\h'\\n(.lu-\\n(;uu-\\n(;wu-1n'\z\L'\\n(;l'\v'1'\h'1n'\c
-.;c \\n(;uu
+.if t \v'-\\n(;j-1'\h'\\n(.lu-\\n(;yu-\\n(;zu-1n'\z\L'\\n(;l'\v'1'\h'1n'\c
+.;c \\n(;yu
+.br
+.ps \\n(;a
+.vs \\n(;b
+.ft \\n(;v
 .sp |\\n(HMu
 .nr FM \\n(;f
+.nr ;r 0
 ..
 .rn BT Bt
 .de BT
 .if !'\\n%'\\*(;p' .Bt
 ..
 .\" =============================================================
-.\" module: box
-.\" =============================================================
-.\" \n(;o bits:
-.\"	1	DS/DE active
-.\"	2   B	B1/B2
-.\"	4	restore position
-.\"	8   R	right justified
-.\"	16  C	centered
-.\" placement:
-.\"	""	right of address
-.\"	L	top left corner
-.\"	A	above address
-.\"	T	top, centered
-.\"	I	top right corner (invoice block)
-.de Bo  \" .Bo [CR]?[B]? [LATI]?
-.Be
-.nr ;o 4+1
-.ie     '\\$1'B'  .nr ;o +2
-.el .ie '\\$1'R'  .nr ;o +8
-.el .ie '\\$1'RB' .nr ;o +8+2
-.el .ie '\\$1'C'  .nr ;o +16
-.el .ie '\\$1'CB' .nr ;o +16+2
-.el .if !'\\$1''  .tm \\n(.F:\\n(.c: invalid .Bo argument: \\$1
-.nr ;v \\n(.d
-.nr ;h \\n(.k
-.sp |\\n(;pu
-.ie \\n(;o/8%4 \{\
-.	ie \\n(;o/8%2 .DS R
-.	el            .DS C
-.	in +9.5c \}
-.el .DS I 9.5c
-.ie \\n(;o/2%2 \{\
-.	B1
-.	sp 0.2 \}
-.el \{\
-.	in +1n
-.	ll -1n \}
-.\" .ie \\n(;o/16%2 .ce 9999
-..
-.de Bh
-.ps 20
-.vs 20
-.sp 5p
-.B
-.if !\\n(;o/16%2 .ce
-\v'-21p'\z\l'\w'\|\^\\$1\|\^'u'\
-\v'2p'\z\l'\w'\|\^\\$1\|\^'u'\
-\v'25p'\z\l'\w'\|\^\\$1\|\^'u'\
-\v'2p'\z\l'\w'\|\^\\$1\|\^'u'\
-\v'-8p'\|\^\\$1\|\^
-.sp 10p
-.ps
-.vs
-.ft
-..
-.de Bs
-.sp -0.5
-\l'\\n(.lu-\\n(.iu-\\n(.ku'
-..
-.de Be
-.\" \&\c
-.LP       \" troll -ms so it forgets the space before .TL
-.\" .sp -1.3  \" return to previous position
-.rn ;e Be
-.\" .Be
-..
-.de ;e
-.if \\n(;o \{\
-.	sp 0.3
-.	if \\n(;o/2%2 .B2
-.	DE
-.	sp +0.5c-0.5
-.	if \\n(.d-\\n(;t .nr ;t \\n(.d
-.	sp -0.5c
-.	if \\n(.d-\\n(;p .nr ;p \\n(.d
-.	if \\n(;o/4%2 \{\
-.		sp |\\n(;vu
-\h'|\\n(;hu'\c\}
-.	nr ;o 0 \}
-..
-.\" =============================================================
 .\" module: header
 .\" =============================================================
-.de Hd	\" Start header display, print $1
-.Be
-.DS R
-.nr ;o 5
-.nr ;v \\n(HMu
-.ps 16
-.if !'\\$1'' .B "\\$1"
-.ps
-..
 .de Ih  \" print invoice header "Invoice $1" with date & due date fields
 .Hd "\\*(_i \\$1"
 .if !'\\*(Da'' \\*(_d \\*(Da
@@ -502,87 +464,26 @@
 .Ih "\\$1"
 ..
 .\" =============================================================
-.\" module: address block
-.\" =============================================================
-.de Ad
-.Be
-.LP
-\&
-.\" .sp -0.5
-.\" .if \\n(.d-\\n(;p .nr ;p \\n(.d
-.\" .if \\n(.d-\\n(;t .nr ;t \\n(.d
-.if t .vs 0
-.sp |5.5c
-.if !(\\n(Cf/2%2) \v'-0.2c'\D'l 0 -0.3c'\D'l 0.3c 0'\
-\h'8.4c'\D'l 0.3c 0'\D'l 0 0.3c'\
-\v'4.4c'\D'l 0 0.3c'\D'l -0.3c 0'\
-\h'-8.4c'\D'l -0.3c 0'\D'l 0 -0.3c'\c
-.if n .sp -1
-.DS I 0.5c
-.ll 8c
-.ft CB
-.ps 6
-.vs 6
-.ie \\n(Cf%1 \{\
-.sp 2
-\\*(Nm\fC\c
-.if !'\\*(1a'' , \\*(1a\c
-.if !'\\*(2a'' , \\*(2a\c
-.if !'\\*(3a'' , \\*(3a\c
-.if !'\\*(4a'' , \\*(4a\c
-.if !'\\*(5a'' , \\*(5a\c
-.if !'\\*(6a'' , \\*(6a\c
-\}
-.el \{\
-.sp -1
-.if '\\*(2a'' .sp
-.if '\\*(3a'' .sp
-\\*(Nm
-.ft C
-\\*(1a
-.if !'\\*(2a'' \\*(2a
-.if !'\\*(3a'' \\*(3a
-.if !'\\*(4a'' \\*(4a
-.if !'\\*(5a'' \\*(5a
-.if !'\\*(6a'' \\*(6a
-.\}
-\u\l'8c'
-.ps 10
-.vs 10
-.sp 0.5
-.ft CB
-\\$1
-.ft C
-..
-.de Ea
-.DE
-.if \\n(;t-\\n(.d .sp |\\n(;tu
-.Am
-..
-.de Ae
-.Ea
-..
-.\" =============================================================
 .\" module: Berkeley .AM compatibility
 .\" =============================================================
-.rn AM ;z
-.de AM
-.tm \\n(.F:\\n(.c: Error: .AM before .Ae
-.tm \\n(.F:\\n(.c: To resolve the issue, invoke .Am to choose
-.tm \\n(.F:\\n(.c: the behaviour of .AM.  After ".Am keep",
-.tm \\n(.F:\\n(.c: .AM keeps .Ae and makes \\\\*(Ae available as \\\\*(Ax.
-.tm \\n(.F:\\n(.c: Otherwise .AM functions as usual and .Ea must
-.tm \\n(.F:\\n(.c: be used instead of .Ae.
-.ab \\n(.F:\\n(.c: Aborting
-..
-.de Am
-.rn ;z AM
-.if '\\$1'keep' \{\
-.am AM ..
-.ds Ax \\\\*(Ae
-.de Ae ;.
-.Ea
-.;.
-... \}
-.rm Am
-..
+.\" .rn AM ;z
+.\" .de AM
+.\" .tm \\n(.F:\\n(.c: Error: .AM before .Ae
+.\" .tm \\n(.F:\\n(.c: To resolve the issue, invoke .Am to choose
+.\" .tm \\n(.F:\\n(.c: the behaviour of .AM.  After ".Am keep",
+.\" .tm \\n(.F:\\n(.c: .AM keeps .Ae and makes \\\\*(Ae available as \\\\*(Az.
+.\" .tm \\n(.F:\\n(.c: Otherwise .AM functions as usual and .Ea must
+.\" .tm \\n(.F:\\n(.c: be used instead of .Ae.
+.\" .ab \\n(.F:\\n(.c: Aborting
+.\" ..
+.\" .de Am
+.\" .rn ;z AM
+.\" .if '\\$1'keep' \{\
+.\" .am AM ..
+.\" .ds Az \\\\*(Ae
+.\" .de Ae ;.
+.\" .Ea
+.\" .;.
+.\" ... \}
+.\" .rm Am
+.\" ..

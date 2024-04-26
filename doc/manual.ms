@@ -8,6 +8,7 @@ purpose with or without fee is hereby granted, provided that the above
 copyright notice and this permission notice appear in all copies.
 .PP
 .ps -1
+.vs -1
 .if t .hy 1
 THE SOFTWARE IS PROVIDED
 .Qu "AS IS"
@@ -20,8 +21,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ..
 .\" =============================================================
-.Id 2024 3 17
-.\" .Fd Da
+.Id 2024 4 26
 .nr ;x \n(Dy
 .DA \n(;x \*(Ml \n(Yr
 .nr HY 0
@@ -30,6 +30,19 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .ds Is \s-1ISO\s0
 .ds An \s-1IBAN\s0
 .ds Bc \s-1BIC\s0
+.ie t \{\
+.ds Mi \h'1p'\z\D'l 10p 0'\D'l 0 -6p'\z\D'l 5p 3p'\
+\D'l 10p 0'\z\D'l -5p 3p'\D'l 0 6p'\h'1p'
+.ds Me \k(;x\h'-\\n(.iu-\\n(.ku-18p'\*(Mi\h'|\\n(;xu'
+.ds Mp \k(;x\h'-\\n(.iu-\\n(.ku-\\n(PIu-18p'\*(Mi\h'|\\n(;xu'
+.\}
+.el \{\
+.ds Mi (M)
+.ds Me \k(;x\h'\\n(.lu-\\n(.iu-\\n(.ku+6n'\*(Mi\h'|\\n(;xu'
+.ds Mp \k(;x\h'\\n(.lu-\\n(.iu-\\n(.ku-\\n(PIu+6n'\*(Mi\h'|\\n(;xu'
+.\}
+.ds aq '
+.if \n(.g .ds aq \(aq
 .de Sc
 \\$3\s-1\\$1\s0\\$2
 ..
@@ -47,6 +60,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ..
 .de Ma
 .IP "\f(CB\\$1 \fI\\$2"
+\v'-1'\\$3\v'1'\c
 ..
 .de Lh
 .SH
@@ -56,6 +70,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\" .LP
 .TL
 Invoice Generator Manual
+.\" .sp -1
 .AU
 Vadim Vygonets
 .\" .SH
@@ -63,7 +78,7 @@ Vadim Vygonets
 .AB no
 .\" .PP
 The invoice generator is a document preprocessor
-and a troff macro package for invoices and letters.
+and a troff macro package for invoices.
 The
 .Cb inv
 .\" preprocessor turns a simple invoice description into
@@ -72,10 +87,19 @@ preprocessor turns a list of billed items into
 source.
 The
 .Cb \-minv
-macro package, built on top of
+macro package provides facilities for invoice headers and footers
+and date manipulation in letters written using
+.\" adds invoice header and footer to a letter written using
 .CW \-ms
-macros, formats the first page of a letter,
-optionally including invoice-related information.
+and
+.CW \-mail
+macros.
+.\" macro package, built on top of
+.\" .CW \-ms
+.\" and
+.\" .CW \-mail
+.\" macros, formats the first page of a letter,
+.\" optionally including invoice-related information.
 .PP
 It was made for freelancers in Germany,
 but should be flexible enough to be useful for others.
@@ -90,7 +114,7 @@ Quick start
 Create the configuration file
 .CW inc/conf.t
 containing your details, from the template in
-.CW inc/conf-example.t .
+.CW inc/conf\-example.t .
 .sp -\n(PDu
 .ds Xg \fR\h'-\w'\(dg'u/2u-2n'\(dg\fP\h'|0u'
 .ds Xd \fR\k(;x\h'-\w'\(dd'u/2u-2n'\(dd\fP\h'|\n(;xu'
@@ -112,7 +136,13 @@ lfC lix .
 \&.ds Tn \*(Tn	Tax number
 \&.ds Ta \*(Ta	Tax authority
 \*(Xd\&.ds Cu \*(Cu	Default currency
-\*(Xo\&.nr Cf 0	1 for one-line sender address
+\*(Xo\&.nr Cf 0	T{
+.fi
+.ad l
+Flags:
+1\ =\ compact sender address,
+2\ =\ fold lines
+T}
 \*(Xo\&.Set tax 0	Default tax rate
 \*(Xo\&.Set fmt %.2f	Default currency format
 .TE
@@ -126,6 +156,13 @@ lfC lix .
 \s-2\(es\s0  Default value shown\h'3n'\
 \(**  A German thing
 .sp \n(PDu
+.PP
+For more customisation and localisation options see
+.I "Footer customisation"
+and
+.I "Appendix B" ;
+for changing page layout and address box appearance see
+.CW doc/using\-mail.pdf .
 .PP
 Decide how you want to organise your invoices and letters
 (e.g., by year).
@@ -145,20 +182,21 @@ containing source such as:
 .DE
 .\" .sp -0.8
 .sp -\n(PDu
-\h'5'\(**  Optional\h'3n'\
-\" \z\L'-1'\ \ For a letter, only use lines marked with a bar, followed by the contents.
+\h'5'\(**  Optional\h'3n'
 .sp \n(PDu
-.PP
-To write a letter, use only the lines marked with a bar
-and put the text below.
+.\" .PP
+.\" To write a letter, use only the lines marked with a bar
+.\" and put the text below.
 .PP
 Run
-.Ic filename .pdf "make\ "
+.\" .Ic filename .pdf "make\ "
+.CW make
 to generate the document.
 The source above will result in the invoice on the next page.
 .so invoice.t
-.Lh
+.Tl
 Basic usage
+.Te
 .PP
 An invoice source contains troff code and
 .CW inv
@@ -171,7 +209,7 @@ and
 .CW .End ,
 starting at the beginning of the line,
 with arguments separated by whitespace.
-.\" .PP
+.PP
 The file
 .CW $INVCONF
 (default:
@@ -216,26 +254,37 @@ containing the invoice number, date and optional due date.
 .\" If no date is given, it defaults to today.
 See
 .I "Using numeric dates"
-on how to set the due date programmatically.
+on setting the due date programmatically.
 Lines that follow will be added to the block.
 No output is allowed before
 .CW .In .
 .PP
+\*(Mp\c
 .Cb .Ad
-ends the active block, starts the address block
-where it can be seen through a DL or C4 envelope window
-and prints the sender name and address and the recipient name.
-Lines that follow will be added to the block.
+ends an active block and starts the address definition.
+.\" Lines that follow will be added to the address.
+.\" .PP
 .Cb .Ae
-ends the block and sets the position below the window.
-For compatibility with
-.CW .AM
-from Berkeley (and
-.Sc GNU )
-.CW \-ms ,
-.CW .Ae
-is also available as
-.Cb .Ea .
+ends the definition,
+prints the address where it's visible through an
+.\" .Sc DL ,
+.\" .Sc "C5/C6 (DL+)"
+.\" or
+.\" .Sc C4
+envelope window
+and sets the position below the window.
+.\" For compatibility with
+.\" .CW .AM
+.\" from Berkeley and
+.\" .Sc GNU
+.\" .CW \-ms ,
+.\" .CW .Be
+.\" can be used instead of
+.\" .CW .Ae .
+Macros and sections marked with \*(Mi are from
+.CW \-mail
+and are described in more detail in
+.CW doc/using\-mail.pdf .
 .PP
 You might want to have a file per client
 containing the address block and settings
@@ -259,16 +308,23 @@ or
 command starts the invoice table.
 .RS
 .Ma .Set "var value"
-Change
-.\" .CW inv
-.\" settings: VAT rate
-default \*(Va rate
-.CW tax , (
-default: 0) or currency format
-.CW fmt , (
-default:
-.Cq %.2f ).
-.Ma .Tax [rate]
+Set
+.CW inv
+setting
+.I var
+to
+.I value .
+The settings are:
+.\" default \*(Va rate
+.CW tax
+(\*(Va rate, default: 0),
+.CW fmt
+(currency format, default:
+.Cq %.2f )
+and
+.CW warn
+(enable warnings, default: 1).
+.Ma .Tax \fR[\fPrate\fR]
 Set the \*(Va rate for subsequent charges.
 .\" An invoice may contain multiple rates.
 Charges at each rate are listed separately, with
@@ -289,7 +345,7 @@ To suppress it, use
 .Cq \e0
 can be used instead of
 .Sc SPACE .
-A long description should be put in a
+A description that doesn't fit on one line should be put in a
 .CW tbl
 block, as shown below.
 If used in the first
@@ -328,27 +384,27 @@ block, followed by text and
 .CW \-ms
 macros.
 .\" which will be printed below the address.
+It must have an appropriate
+.CW \-minv ,
+.CW \-mail
+or
+.CW \-ms
+macro before any text (see the schematic below).
+When in doubt, use
+.CW .LP .
 .PP
 .\" Any text before
 .\" .CW .Ad
 .\" will appear on top of the page.
-.\" There are several ways to use the limited space around the address box.
-.\" To put a title on top, precede
-.\" .CW .TL
-.\" by
-.\" .CW .LP
-.\" To print a title at the top, put
-To print a title, put
-.CW .LP
-before
-.CW .TL
-to reduce vertical spacing.
-A header block or a box can be used for additional information.
+.\" \*(Mp\c
+There are several ways to use the limited space around the address box.
+A title, a header block or boxes can be used for additional information.
 Or you can just doodle on the margins.
 See
 .I "Appendix A: Example letter" .
-.Lh
+.Tl
 Advanced usage
+.Te
 .\" .\" .BX "You can stop reading now."
 .\" .nr ;w \w'\f(BI\|You can stop reading now.\|\fP'
 .\" .tl ??Features that nobody needs start here. \
@@ -364,19 +420,9 @@ Advanced usage
 .\" scale = 2.54
 .\" boxwid = 1.8
 boxwid = 0.71
-.\" movewid = boxwid
-.\" movewid = 1
 movewid = 0.45
 linewid = movewid
-.\" boxht = 1
 boxht = 0.39
-.\" ---
-.\" boxht = 2
-.\" boxwid = 1.5
-.\" movewid = 1
-.\" moveht = 2
-.\" linewid = 1
-.\" ---
 moveht = boxht
 circlerad = boxht / 2
 .I
@@ -388,8 +434,10 @@ arrow from 0.7 <Start.s, Start.e> down 0.5 * moveht \
 .CW
 In: box ".In"
 arrow 0.1 * movewid then up 0.45 * boxht then right 0.9 * movewid
-right ; move from In.e
-Bx: box ".Bo\fI etc." "(box)\fP" dashed
+move from In.e
+.I
+Bx: box "box" "(\f(CI.Bo\fP etc.)" dashed
+.CW
 arrow from 0.7 <Bx.ne, Bx.se> right 0.3 * movewid \
 	then down 0.55 * moveht \
 	then left 0.6 * movewid boxwid \
@@ -410,14 +458,14 @@ arrow from Start.c down 1.35 * moveht \
 	then to 0.6 <Id.nw, Id.w> + -0.5 * movewid, 0 \
 	then to 0.6 <Id.nw, Id.w>
 arrow from 0.3 <Start.s, Start.e> down 3.5 * moveht \
-	then right 0.5 * movewid
-LP: box ".LP" ; arrow ; TL: box ".TL"
+	then right boxwid 1.5 * movewid
+Tl: box "\s9.Tl safe\s0"
 move ; Hd: box ".Hd"
 arrow 0.4 * movewid \
 	then to 0.5 <Bx.nw, Bx.sw> - 0.6 * movewid, 0 \
 	then to 0.5 <Bx.nw, Bx.sw>
 arrow from 0.6 <Ft.e, Ft.se> right 0.4 * movewid \
-	then to 0.6 <TL.nw, TL.w> + -0.6*movewid,0 then to 0.6 <TL.nw, TL.w>
+	then to 0.6 <Tl.nw, Tl.w> + -0.6*movewid,0 then to 0.6 <Tl.nw, Tl.w>
 arrow from 0.4 <Id.e, Id.se> 0.7 * movewid \
 	then to Hd.w + -0.3*movewid,0 then to Hd.w
 arrow from 0.3 <Ft.e, Ft.se> right 0.6 * movewid \
@@ -427,7 +475,7 @@ arrow from 0.3 <Ft.e, Ft.se> right 0.6 * movewid \
 	then right movewid boxwid \
 	then to 0.65 <Bx.nw, Bx.sw> - 0.5 * movewid, 0 \
 	then to 0.65 <Bx.nw, Bx.sw>
-arrow from TL.e right 0.3 * movewid \
+arrow from Tl.e right 0.3 * movewid \
 	then down 0.7 * moveht \
 	then right 1.3 * movewid boxwid \
 	then to 0.8 <Bx.nw, Bx.sw> - 0.4 * movewid, 0 \
@@ -440,7 +488,7 @@ arrow from Bx.e 0.5 * movewid \
 box ".Ad" ; arrow ; box ".Ae"
 .I
 arrow ; box "invoice" "table" dashed
-arrow ; box "any text or\^" "troff\^ \fC-ms\fP" dashed
+arrow ; box "any text or\^" "troff \f(CI-ms\fP" dashed
 arrow ; circle "end\^"
 circle with .c at last circle .c radius circlerad - 0.03
 ]
@@ -450,14 +498,15 @@ at All.n
 .PE
 .\}
 .el \{\
+.so /dev/null
 .DS L
 .CW
                           Recommended flow
   start          Plused boxes can be skipped through.
 \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru                               \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru       +++++++++++
-  \(br\(br\(br\(br\(br                                \(br         \(br      +.Bo etc. +
-  \(br\(br\(br\(br\(**\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(->\(br   .In   \(br\(mi\(->\(**\(mi\(mi\(->+  (box)  +\(mi\(mi\(**
-  \(br\(br\(br\(br                                 \(br         \(br  \(ua   +         +\(mi\(**\(br
+  \(br\(br\(br\(br\(br                                \(br         \(br      +   box   +
+  \(br\(br\(br\(br\(**\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(->\(br   .In   \(br\(mi\(->\(**\(mi\(mi\(->+  (.Bo   +\(mi\(mi\(**
+  \(br\(br\(br\(br                                 \(br         \(br  \(ua   +  etc.)  +\(mi\(**\(br
   \(br\(br\(br\(br                                 \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br  \(br   +++++++++++ \(br\(br
   \(br\(br\(br\(**\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(->\(**\(<-\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(**\(br
   \(br\(br\(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru                                \(ua                \(br
@@ -468,17 +517,17 @@ at All.n
   \(br   \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br  \(br\(br  +++++++++++   \(br \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br  \(br                \(br
   \(br                \(br\(br                \(br              \(br                \(br
   \(br                \(br\(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru  \(br              \(br                \(br
-  \(br    \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru   \(br    \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru  \(br \(br  \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru   \(br                \(br
-  \(br   \(br         \(br  \(da   \(br         \(br \(da \(br \(br         \(br  \(br                \(br
-  \(**\(mi\(mi\(->\(br   .LP   \(br\(mi\(->\(**\(mi\(mi\(->\(br  .TL    \(br\(->\(** \(**\(->\(br   .Hd   \(br\(mi\(->\(**                \(br
-      \(br         \(br      \(br         \(br \(br   \(br         \(br  \(ua                \(br
-      \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br      \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br \(br   \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br  \(br                \(br
+  \(br                \(br    \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru  \(br \(br  \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru   \(br                \(br
+  \(br                \(da   \(br         \(br \(da \(br \(br         \(br  \(br                \(br
+  \(**\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(mi\(->\(**\(mi\(mi\(->\(br .Tl safe\(br\(->\(** \(**\(->\(br   .Hd   \(br\(mi\(->\(**                \(br
+                       \(br         \(br \(br   \(br         \(br  \(ua                \(br
+                       \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br \(br   \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br  \(br                \(br
                                    \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br                \(br
     \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br
    \(br   \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru        \(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru      +++++++++++      +++++++++++
-   \(br  \(br         \(br      \(br         \(br     + invoice +     + any text +
+   \(br  \(br         \(br      \(br         \(br     + invoice +      +any text +
    \(**\(mi\(->\(br   .Ad   \(br\(mi\(mi\(mi\(mi\(mi\(->\(br  .Ae    \(br\(mi\(mi\(mi\(mi\(->+  table  +\(mi\(mi\(mi\(mi\(mi\(->+   or    +\(mi\(mi\(mi\(mi\(->end
-      \(br         \(br      \(br         \(br     +         +      +troff -ms+
+      \(br         \(br      \(br         \(br     +         +      +troff \-ms+
       \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br      \(br\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(ru\(br     +++++++++++      +++++++++++
 .DE \}
 .sp -1
@@ -500,10 +549,13 @@ macro can be used separately.
 .\" .PP
 .\" Related macros:
 .RS
-.Ma .Id "invoice-date [due-date]"
-.sp -\n(PDu
+.sp 3
+.sp -3
+.Ma .Id "invoice-date \fR[\fPdue-date\fR]"
+.sp -\n(PDu-1
 .if n .ad l
-.Ma .Id "[invoice-year invoice-month invoice-day [due-year due-month due-day]]"
+.Ma .Id "\fR[\fPinvoice-year invoice-month invoice-day \
+\fR[\fPdue-year due-month due-day\fR]]"
 .if n .ad b
 Set the strings
 .CW Da
@@ -517,14 +569,14 @@ to invoice date and due date.
 See the next section
 for details.
 .Ma .Ft
-Set the bottom margin of the first page to cover the footer.
-If output had occured, eject page.
+Set the bottom margin of the page to cover the footer.
+If the current page is being printed, eject it.
 Print the footer.
 Restore bottom margin.
 Set the position at the top margin.
 .\" No output is allowed before
 .\" .CW .Ft .
-.Ma .Hd [header]
+.Ma .Hd \fR[\fPheader\fR] \\*(Me
 Start the header block at the top right.
 If
 .I header
@@ -539,11 +591,13 @@ Print
 and
 .Qu "Due date"
 fields if the corresponding strings are set.
-.Ma .In "number invoice-date [due-date]"
-.sp -\n(PDu
+.sp 3
+.sp -3
+.Ma .In "number invoice-date \fR[\fPdue-date\fR]"
+.sp -\n(PDu-1
 .if n .ad l
-.Ma .In "number [invoice-year invoice-month invoice-day \
-[due-year due-month due-day]]"
+.Ma .In "number \fR[\fPinvoice-year invoice-month invoice-day \
+\fR[\fPdue-year due-month due-day\fR]]"
 .if n .ad b
 Set dates
 .CW .Id ), (
@@ -561,7 +615,7 @@ and
 store the invoice and due dates in troff strings
 .Cb Da
 and
-.Cb De .
+.Cb Du .
 When called with string dates, the strings are set to the arguments.
 Otherwise numeric dates are used, as described here.
 Numeric dates use registers
@@ -604,7 +658,7 @@ Add
 .I days
 to the date and normalise date register values.
 The argument may be negative.
-.Ma .+m "months [years]"
+.Ma .+m "months \fR[\fPyears\fR]"
 Add
 .I months
 and
@@ -642,7 +696,7 @@ E.g., for 2024-12-31 the values are
 .Cq Tue
 and
 .Cq Tuesday .
-.Ma .Sw "year week day"
+.Ma .We "year week day"
 Set the date to the given \*(Is week date.
 .RE
 .PP
@@ -678,10 +732,10 @@ to the last day of this or next month, respectively.
 \&.de Cd
 \&.if \e\en(Wd>5 .+d 8-\e\en(Wd  \e" if Sat or Sun, add 2 or 1 days
 \&.Fd Da                     \e" format invoice date
-\&.if !\e\en(Dy==1 .+d 1       \e" if day!=1, add a day
-\&.if !\e\en(Dy==1 .nr Dy -1   \e" if day!=1, restore original value
+\&.if !\e\en(Dy=1 .+d 1        \e" if day!=1, add a day
+\&.if !\e\en(Dy=1 .nr Dy -1    \e" if day!=1, restore original value
 \&.+m 1                      \e" add a month
-\&.if \e\en(Dy==1 .+d -1       \e" if day==1, subtract a day
+\&.if \e\en(Dy=1 .+d -1        \e" if day==1, subtract a day
 \&.Dd                        \e" set due date
 \&..
 .DE
@@ -772,7 +826,7 @@ e.g.,
 \&.ds Df \e\e*(Ws, \e\en(Dy \e\e*(Ms \e\en(Yr
 .DE
 .SH
-Footer
+Footer customisation
 .PP
 Footer fields are customisable.
 The string
@@ -796,8 +850,8 @@ its value string has positive width
 (that's troffese for
 .Qu length ).
 .PP
-Default settings are listed in the section
-.I "Macros, strings and number registers" .
+Default settings are listed in
+.I "Appendix B" .
 Double backslashes interpolate the referenced values
 during evaluation.
 The list of fields has gaps for easier customisability.
@@ -815,7 +869,7 @@ title one line up and put an empty(-looking) line above it.
 \&.ds /p \e|
 .\" \&.\e" /q: set title to "Address:" and value to the name in bold
 \&.ds /Q \e*(/R
-\&.ds /q \efB\e*(Nm\efP
+\&.ds /q \efB\e\e*(Nm\efP
 .\" \&.\e" /r: clear field title
 \&.ds /R
 .DE
@@ -836,15 +890,15 @@ Instead,
 becomes the macro to redefine for more complex
 .CW \-ms
 footers in invoices,
-as it was done here. \c
+as it was done here.\& \c
 .rn Bt Xb
 .de Bt
 .rn Xb Bt
 .af Dy 1
 .af Yr I
 .tl @\fIPage \n% special!\fP@\\n(Dy \\*(Ml \\n(Yr@\fIDraws!  Leaves!\fP\
-\k(;x\v'-0.2v'\h'1n'\z\D'l 1n -0.3n'\z\D'l 1n 0.3n'\
-\D'l 2m 0'\D'l 0 \n(.du-\\n(.du'\D'l \n(.ku-\\n(.lu-2m 0'\
+\k(;x\v'-0.2v'\h'1n'\z\D'P 1.5n -0.3n 0 0.6n'\h'1n'\
+\D'l 1n+1m 0'\D'l 0 \n(.du-\\n(.du'\D'l \n(.ku-\\n(.lu-2m 0'\
 \h'|\\n(;xu'@
 .af Dy 01
 .af Yr 0001
@@ -853,14 +907,45 @@ as it was done here. \c
 .\" .Cb .Bt
 .\" macro instead.
 .SH
-Box
+Title\*(Me
+.\" .PP
+.\" To print a title so that it fits above the safety area,
+.\" .CW \-minv
+.\" supplements
+.\" .CW .TL
+.\" from
+.\" .CW \-ms
+.\" with its own facility for titles.
+.\" It is useful not only at the top of the title page,
+.\" but also later in the document.
+.RS
+.Ma .Tl \fR[\fCsafe\fP]
+Print a title.
+With
+.Cq safe ,
+if the title is too long,
+.\" if the title would end below the top of the
+.\" .Qu "safety area"
+.\" around the address (more than one line with default settings),
+printing is delayed until after
+.CW .Ae .
+.Ma .Te
+End the title.
+May be omitted before
+.CW .Bo
+or
+.CW .Ad .
+.RE
+.SH
+Box\*(Me
 .PP
 A
 box
-is a narrow (around 30 ens or 5.4 cm)
-display block to the right of the address.
-Boxes work better if used before
-.CW .Ad .
+is a narrow display block
+.\" (around 35 ens or 6.2 cm with default settings)
+to the right of the address.
+.\" Boxes work better if used before
+.\" .CW .Ad .
 Subsequent boxes appear below previous ones.
 If a box ends below the address display,
 it will push the position set by
@@ -868,32 +953,64 @@ it will push the position set by
 downwards.
 Likewise, a long header may displace boxes.
 .RS
-.Ma .Bo [style]
+.Ma .Bo \fR[\fPstyle\fR]
+.\" .Ma .Bo \
+.\" [\f(CILF\fP\||\f(CIF\fP\||\f(CIC\fP\||\f(CIR\fP\||\f(CIRF\fP][\f(CIN\fP]
 Start a box block.
-The style is one of
-.CW B ,
-.CW R ,
-.CW RB ,
-.CW C
-or
-.CW CB .
-The default is bare, left-justified.
+The style is [\c
+.CW LF \^|\^\c
+.CW F \^|\^\c
+.CW C \^|\^\c
+.CW R \^|\^\c
+.CW RF ][\c
+.CW N ].
+.\" The style is one of
+.\" .CW N ,
+.\" .CW R ,
+.\" .CW RN ,
+.\" .CW C
+.\" or
+.\" .CW CN .
+The default is left-adjusted, unfilled, boxed.
+.CW L ,
 .CW C
 and
 .CW R
-make the contents centered or right-justified,
-.CW B
-encloses the block in a box.
-.Ma .Bh string
-Print a box header
-.Ma .Bs
+set adjustment to left, centre or right,
+.CW F
+enables filling,
+.CW N
+omits the enclosing box.
+.\" .Ma .Bh string
+.\" Print a box header.
+.Ma .Hs
 Draw a horizontal separator.
+Also useful outside the box.
 .Ma .Be
-End a previous box or invoice header block.
+End a previous box, invoice header or address block.
 May be omitted before
 .CW .Bo
 or
 .CW .Ad .
+.RE
+.SH
+Signature\*(Me
+.RS
+.Ma .Sl "above below \fR[\fCfull\fP\^|\^\fCno\fP]"
+Draw a signature line with
+.I above
+printed five lines above and
+.I below
+in italic under.
+.Cq no ,
+omits the line,
+.Cq full ,
+makes it longer.
+.\" If immediately followed by another
+A second
+.CW .Sl
+.\" call, the second line will be printed to its right,
+will place the line to its right.
 .RE
 .SH
 Setting tax amounts manually
@@ -925,13 +1042,13 @@ using
 .\" \|command immediately before
 .\" .CW .Charge .
 .BI
-Consult your accountant.
-.\" .PP
-.\" A
-.\" .Cb .Taxed
-.\" \|command immediately preceding
-.\" .CW .Charge
-.\" sets the tax amount for the charge.
+Ask your accountant what to do.
+.PP
+A
+.Cb .Taxed
+\|command immediately preceding
+.CW .Charge
+sets the tax amount for the charge.
 .DS
 .CW
 .\" \&.Tax 19
@@ -941,7 +1058,7 @@ Consult your accountant.
 .\" \&.Charge 12.61 1 Ticket Coming back
 .DE
 .SH
-Dealing with
+\*(MeDealing with
 .ft CB
 \&.AM
 .PP
@@ -971,13 +1088,13 @@ restores the original behaviour of
 modifies it to rename the
 .CW Ae
 string to
-.CW Ax
+.CW Af
 and keep the
 .\" .CW .Ae
 macro.
+.CW .Be
+can be used instead of
 .CW .Ae
-is available as
-.CW .Ea
 regardless.
 .ig
 .CW .Am 's
@@ -992,8 +1109,9 @@ whereupon it removes itself.
 .\" after that it has no effect.
 .CW .Ae
 calls it without arguments.
-.Lh
+.Tl
 Appendix A: Example letter
+.Te
 .PP
 .\" The result is shown on the next page.
 .rn Be ;e
@@ -1005,22 +1123,21 @@ Appendix A: Example letter
 .wh \n(HMu-1
 .so nitama-letter.t
 .\" .I [...]
-.LP
-.Bs
-.LP
+.Hs
 ..
 .wh \n(HMu-1 Xw
 .ID \" \n(PIu
-.ps -1
-.vs -1
+.\" .ps -1
+.\" .vs -1
 .CW
 .so nitama-letter.p
 .\" .I [...]
 .DE
-.Lh
+.Tl
 Appendix B: Macros, strings and number registers
-.SH
-Naming convention
+.Te
+.\" .SH
+.\" Naming convention
 .PP
 Neither troff nor
 .CW \-ms
@@ -1028,14 +1145,16 @@ Neither troff nor
 .CW .AM )
 use names consisting of one uppercase and one lowercase letter.
 .CW -minv
-uses names matching
-.CW [+0\-9A\-WY_][a\-z]
+and
+.CW -mail
+use names matching
+.CW [+0\-9A\-WYZ_][a\-z]
 and
 .CW [\-/][A\-Za\-z]
-for its
+for their
 .Sc API ,
 and
-.CW ;[a\-z]
+.CW [';][A\-Za\-z]
 internally.
 Names matching
 .CW X[a\-z]
@@ -1052,12 +1171,17 @@ Configuration strings:
 li lix li
 lfC l li .
 Name	Description	Notes\h'2'\&
-1a	Address line 1	[a] [f] \fR\(dg
-2a	\b'\(rt\(bv\(rk\(bv\(rb' Address lines 2\-6	[a] [f]
+1a\*(Me	Address line 1	[a] [f] \fR\(dg
+2a\*(Me	\b'\(rt\(bv\(rk\(bv\(rb' Address lines 2\-6	[a] [f]
 3a	\^	\^
 4a	\^	\^
 5a	\^	\^
 6a	\^	\^
+Af\*(Me	T{
+.ad l
+Address font (default:
+.CW C )
+T}	[a]
 Ba	Bank name	[f]
 Bi	\*(Bc	[f]
 Bl	Bankleitzahl	[f]
@@ -1065,9 +1189,50 @@ Cu	Currency	[t] \fR\(dd
 Df	Date format	[h]
 Ds	Date separator	[h]
 Ib	\*(An	[f]
-Nm	Name	[a] [f] \fR\(dg
+Nf\*(Me	T{
+.ad l
+Name font in address (default:
+.CW CB )
+T}	[a]
+Nm\*(Me	Name	[a] [f] \fR\(dg
+Sa\*(Me	Sender address font	[a]
+Sn\*(Me	Sender name font	[a]
 Ta	Tax authority	[f]
 Tn	Tax number	[f]
+.TE
+.KE
+.KS
+.PP
+\*(MpConfiguration registers:
+.TS
+li lix li
+lfC l li .
+Name	Description	Notes\h'2'\&
+Cf	Configuration flags
+Rs	Recipient address font size	[a]
+Ss	Sender address font size	[a]
+.TE
+.KE
+.KS
+.PP
+Configuration flags register\*(Mp
+.CW Cf :
+.TS
+li lix li
+l l li .
+Value	Description	Notes\h'2'\&
+1	Compact sender address	[a]
+2	Draw fold lines	[a]
+.\" 4	T{
+.\" .ad l
+.\" \k(;x\h'-2n'\d\s-3\b'\(rt\(rk\(rb'\s0\u\h'|\n(;xu'\
+.\" Reduce recipient address font
+.\" size by
+.\" 1\(en3 points
+.\" .\" 1, 2 or 3 points
+.\" .I "value\ " "\(di\ 2)" (
+.\" T}	[a]
+.\" 8	\^	\^
 .TE
 .KE
 .KS
@@ -1077,59 +1242,13 @@ Configuration macros:
 li lix li
 lfC l li .
 Name	Description	Notes\h'2'\&
-\&.Am	Choose behaviour of \fC.AM\fP
+\&.Am	Choose behaviour of \fC.AM\fP\*(Me
 \&.Di	Use \*(Is date format	[h]
 .TE
 .KE
 .KS
 .PP
-.\" Configuration register:
-.\" .TS
-.\" li lix li
-.\" lfC l l .
-.\" Name	Description	Notes\h'2'\&
-.\" Cf	T{
-.\" If bit 0 set, print sender address on one line
-.\" T}	[a]
-.\" .TE
-Configuration flags register
-.CW Cf :
-.TS
-li lix li
-l l li .
-Value	Description	Notes\h'2'\&
-1	One-line sender address	[a]
-2	T{
-.ad l
-Omit corners around the address
-T}	[a]
-.TE
-.KE
-.KS
-.PP
 .I Notes:
-.ig
-.\" .TS
-c lx .
-\(dg	Mandatory
-\(dd	Mandatory for invoices
-[a]	T{
-Used by
-.CW .Ad 
-T}
-[f]	T{
-Used by the footer
-.CW .Ft , (
-.CW .In )
-T}
-[h]	T{
-Used by the header
-.CW .Ih , (
-.CW .In )
-T}
-[t]	Used by the invoice table
-.TE
-..
 .sp \n(PDu
 .de Xi
 .sp -\n(PDu
@@ -1139,9 +1258,12 @@ T}
 Mandatory
 .Xi \(dd
 Mandatory for invoices
-.Xi \fI[a]\fP
+.Xi \fI[a]\fP \\*(Me
 Used by
-.CW .Ad 
+.CW .Ad
+.br
+.sp -1
+\*(Me
 .Xi \fI[f]\fP
 Used by the footer
 .CW .Ft , (
@@ -1154,6 +1276,7 @@ Used by the header
 Used by the invoice table
 ..
 .KE
+.sp 0.5
 .KS
 .PP
 User defined macros (optional):
@@ -1172,9 +1295,10 @@ Defined macros:
 .LP
 .CW
 .nf
-\&.+d	.+m	.Ad	.Ae	.Am	.Be	.Bh	.Bo
-\&.Bs	.Dd	.Di	.Ea	.Fd	.Ft	.Hd	.Id
-\&.Ih	.In	.Se	.Sr	.Sw
+\&.+d	.+m	.Ad	.Ae	.Am	.As	.Be	.Bh
+\&.Bo	.Dd	.Di	.Ea	.En	.Fd	.Fo	.Ft
+\&.Hd	.Hs	.Id	.Ih	.In	.Pa	.Ps	.Se
+\&.Sl	.Sr	.Te	.Tl	.We
 .KE
 .sp 0.5
 .KS
@@ -1296,6 +1420,7 @@ _d	\*(_d
 _e	\*(_e
 _f	\*(_f
 _i	\*(_i
+_j\*(Me	\fR\h'-\w'\(lq'u'\(lq\fP\*(_j\fR\(rq\fP \fI(return address joiner)\fP
 _k	\*(_k
 _l	\*(_l
 _m	\*(_m

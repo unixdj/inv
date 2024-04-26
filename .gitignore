@@ -6,5 +6,8 @@ inc/conf.t
 doc/*.t
 doc/*.p
 doc/*.e
+doc/index/foo*
+doc/index/junk.*
 examples/invoice.ms
 examples/nitama-letter.ms
+examples/letter.ms

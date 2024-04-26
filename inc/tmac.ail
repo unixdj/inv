@@ -1,0 +1,689 @@
+.\" Copyright (c) 2024 Vadim Vygonets <vadik@vygo.net>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\" =============================================================
+.
+.\" Names reserved for user: X[a-z]
+.\" Unused names: [GJKLOPQRUVZ][a-z]
+.\" Used names:
+.\"   macros
+.\"	+d +m Ad Ae Am Be Bh Bo Bt Dd Di En Fd Fo Ft Hd Hs
+.\"	Id Ih In Pa Sr We
+.\" Pa  paper
+.\" Ps  define named paper/envelope size
+.\" En  add envelope
+.\" Fo  set fold lines
+.\"   user supplied macro
+.\"	Cd
+.\"   strings
+.\"	1a 2a 3a 4a 5a 6a Af Ba Bi Bl Da Df Ds Du
+.\"	Ib Ml Ms Nm Ta Tn To Tx Wl Ws
+.\"	[-/][A-Yb-y] _[a-fik-w]
+.\"   registers
+.\"	Ag Ah Ai Aj Al Ap Av Aw Ax Ay Cf Dy Fl Mo Wd Wk Wn Wy Sx Sy Yr
+.\" Ax Ay Aw Ah Ap	address box x/y/w/h and hplus (alias h(X))
+.\" Ai Aj Av		address indent and vertical extension
+.\" Al			address alignment
+.\" Sx Sy		safety x/y
+.\" Fl			fold line
+.\"	Aa
+.\"	Ab
+.\"	Ac ?	register
+.\"	Ad	macro
+.\"	Ae	macro
+.\"	Af	string
+.\"	Ag	register
+.\"	Ah	register
+.\"	Ai	register
+.\"	Aj	register
+.\"	Ak
+.\"	Al	register
+.\"	Am	macro
+.\"	An
+.\"	Ao
+.\"	Ap	register
+.\"	Aq
+.\"	Ar
+.\"	As ?	macro
+.\"	At
+.\"	Au
+.\"	Av	register
+.\"	Aw	register
+.\"	Ax	register
+.\"	Ay	register
+.\"	Az
+.\"	----
+.\"	Be	macro
+.\"	Bh	macro
+.\"	Bo	macro
+.\"	En	macro
+.\"	Fl	register
+.\"	Fm	register
+.\"	Fo	macro
+.\"	Hd	macro
+.\"	Hs	macro
+.\"	Nf	string
+.\"	Nm	string
+.\"	Pa	macro
+.\"	Ps	macro
+.\"	Rs	register
+.\"	Rv	register
+.\"	Sa	string
+.\"	Sh	register
+.\"	Sl	macro
+.\"	Sn	string
+.\"	Ss	register
+.\"	Sv	register
+.\"	Sw	register
+.\"	Sx	register
+.\"	Sy	register
+.\"	Te	macro
+.\"	Tl	macro
+.\" Internal names:
+.\"   macros
+.\" Berkeley .AM names matching [A-Z][a-z]:
+.\"	Ae Oe Sd Th Tp
+.\" Internal names:
+.\"   string	'[a-z]	paper name
+.\"   register	'[a-z]	paper width
+.\"   register	'[A-Z]	paper height
+.\"   '[A-Z]	macros/strings
+.\"   ;[A-Z]	registers
+.\"   macros
+.\"	'A	Implementation of .Ae
+.\"	'B	Implementation of .Be
+.\"	'C	Diversion trap for centering (.Tl)
+.\"	'D	.'E helper
+.\"	'E	Implementation of .En
+.\"	'F	Format sender address (.Ae)
+.\"	'G	.'D helper
+.\"	'H
+.\"	'I
+.\"	'J
+.\"	'K
+.\"	'L	Print sender address line (.Ae)
+.\"	'M	Original .AM
+.\"	'N	Set ;J, ;K to named paper or envelope size
+.\"	'O	.Ps and .'E helper
+.\"	'P	STRING
+.\"	'Q	STRING
+.\"	'R	STRING
+.\"	'S	STRING
+.\"	'T	STRING
+.\"	'U ?	.Si diversion
+.\"	'V
+.\"	'W
+.\"	'X	STRING
+.\"	'Y
+.\"	'Z
+.\"   strings
+.\"	'P	Last box or header page number (.Be)
+.\"	'Q	Last signature page number (.Sl)
+.\"	'R	Recipient address diversion (.Ad/.Ae)
+.\"	'S	Sender address diversion (.Ae)
+.\"	   ?	Diversion (.Si)
+.\"	'T	Diversion (.Tl)
+.\"	'X	Temporary string
+.\"   registers
+.\"	;B	Box flags
+.\"	;H	Paper height (.Pa, .En)
+.\"	;J	Paper/envelope width (paper)
+.\"	;K	Paper/envelope heighth (paper)
+.\"	;L	Line
+.\"	;M	Line
+.\"	;N	Disable length warnings (address)
+.\"	;P	Vertical position of next box
+.\"	;Q	Index for _[A-Za-z] and /[a-z]
+.\"	;R	Recipient address position
+.\"	;S	Last signature position
+.\"	;T	Top vertical position below address
+.\"	;V	Saved vertical position (.Bo &c.)
+.\"	;W	Paper width (.Pa, .En)
+.\"	;X	Temporary register
+.\" =============================================================
+.\" defaults
+.\" =============================================================
+.ds _j , \"
+.\" Fonts and point sizes
+.ds Af C
+.ds Nf CB
+.ds Sa \\*(Af
+.ds Sn \\*(Nf
+.nr Rs 10
+.nr Ss 6
+.\" =============================================================
+.\" module: configuration
+.\" =============================================================
+.de As
+.if !'\\$1'' .ds Nm \\$1
+.ds 1a \\$2
+.ds 2a \\$3
+.ds 3a \\$4
+.ds 4a \\$5
+.ds 5a \\$6
+.ds 6a \\$7
+.ds 7a \\$8
+.ds 8a \\$9
+..
+.\" =============================================================
+.\" module: box
+.\" =============================================================
+.\" \n(;B bits:
+.\"     1	DS/DE active
+.\"     2 !N	B1/B2
+.\"     4 	restore position
+.\"     8  R	right justified
+.\"    16  C	centered
+.\"    32  F	filled
+.\"    64 LF/RF	adjusted left/right
+.\"   128  .Ad	Address
+.\"   256  .Tl	title
+.\"   512  .Tl	safe title
+.de Bo  \" .Bo [LF|F|C|R|RF][N]
+.Be
+.br
+.\" \&
+.\" .LP
+.\" .br
+.nr ;B 4+2+1
+.ie      '\\$1'N'   .nr ;B -2
+.el .ie  '\\$1'F'   .nr ;B +32
+.el .ie  '\\$1'FN'  .nr ;B +32-2
+.el .ie  '\\$1'LF'  .nr ;B +64+32
+.el .ie  '\\$1'LFN' .nr ;B +64+32-2
+.el .ie  '\\$1'R'   .nr ;B +8
+.el .ie  '\\$1'RN'  .nr ;B +8-2
+.el .ie  '\\$1'RF'  .nr ;B +64+32+8
+.el .ie  '\\$1'RFN' .nr ;B +64+32+8-2
+.el .ie  '\\$1'C'   .nr ;B +16
+.el .ie  '\\$1'CN'  .nr ;B +16-2
+.el .if !'\\$1''    .tm \\n(.F:\\n(.c: invalid .Bo argument: \\$1
+.nr ;V \\n(.d
+\&
+.sp |\\n(;Pu
+.nr ;X 0\\n(Sx+\\n(Sw+0.5c-\\n(.ou
+.if n .nr ;X -2c
+.ie \\n(;B/8%4 \{\
+.	ie \\n(;B/8%2 .DS R
+.	el            .DS C
+.	in +\\n(;Xu \}
+.el .DS I \\n(;Xu
+.ie \\n(;B/2%2 .B1
+.el \{\
+.	in +5p
+.	ll -5p \}
+.sp 2p
+.if \\n(;B/32%2 \{\
+.	fi
+.	if \\n(;B/64%2 \{\
+.		ie \\n(;B/8%4 .ad r
+.		el            .ad l \}\}
+..
+.de Bh
+.ps 20
+.vs 20
+.sp 5p
+.B
+.if !\\n(;B/16%2 .ce
+\v'-21p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'2p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'25p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'2p'\z\l'\w'\|\^\\$1\|\^'u'\
+\v'-8p'\|\^\\$1\|\^
+.sp 10p
+.ps
+.vs
+.ft
+..
+.de Hs
+.br
+.sp -0.5
+\l'\\n(.lu-\\n(.iu-\\n(.ku'
+.br
+..
+.de Be
+.if !\\n(.P .LP       \" init -ms
+.rn 'B Be
+.Be
+..
+.de 'B
+.ie \\n(;B/256%2 .Te
+.el .ie \\n(;B/128%2 .'A
+.el .ie \\n(;B \{\
+.	sp 3p
+.	if \\n(;B/2%2 .B2
+.	DE
+.	sp -6p
+.	if \\n(.du+0.5c-\\n(;Tu .nr ;T \\n(.du+0.5c
+.	if \\n(.d-\\n(;P .nr ;P \\n(.d
+.	if \\n(;B/4%2 .if \\n(;V-\\n(.d .sp |\\n(;Vu \}
+.el .if !'\\n%'\\*('P' \{\
+.	ie t .nr ;P \\n(Ay-0.3c
+.	el   .nr ;P \\n(Ay-1v
+.	nr ;T 0\\n(Syu+\\n(Shu+0.5c \}
+.nr ;B 0
+.ds 'P \\n%
+..
+.\" =============================================================
+.\" module: header
+.\" =============================================================
+.de Hd	\" Start header display, print $1
+.Be
+.sp |\\n(HMu-\\n(DDu
+.DS R
+.nr ;B 4+1
+.ps 16
+.if \\n(.$ .B "\\$1"
+.ps
+..
+.\" =============================================================
+.\" module: title
+.\" =============================================================
+.de Tl
+.Be
+.nr ;B 256
+.if '\\$1'safe' .nr ;B +512
+.ie !\\n(.d-\\n(HM:\\n(.k .sp |\\n(HMu-6p
+.el .sp 12p
+.\" .LP
+.nr ;M \\n(.lu
+.\" .LP
+.ev 1
+.ad l
+.nh
+.B
+.ps 12
+.vs 15
+.ll \\n(;Mu*5u/6u
+.di 'S
+..
+.de Te
+.if \\n(;B \{\
+.br
+.di
+.\" .LP
+.ie \\n(;B/512%2&(\\n(.d+\\n(dn-\\n(Sy) \{\
+.rn 'S 'T
+.da 'T
+.sp 8p
+.di
+.\}
+.el \{\
+.	ll \\n(;Mu
+.	ce 9999
+.	'S
+.	rm 'S
+.	ce 0
+.sp 8p \}
+.ad b
+.ev
+.nr ;B 0 \}
+..
+.\" =============================================================
+.\" module: signature
+.\" =============================================================
+.\" Sl above below ["full"|"no"]
+.de Sl
+.if '\\$3'full' .nr ;S 0
+.if !'\\*('Q'\\n%' .nr ;S 0
+.ie \\n(;S=\\n(.d&(\\n(.k==0) .in \\n(.lu/2u
+.el \{\
+.	nr ;S 0
+.	LP
+.	in 0
+.	sp 9 \}
+.sp -8
+\&\\$1
+.sp 5
+.ie      '\\$3'full' \v'-0.9'\z\l'\\n(.lu*3u/4u'\v'0.9'\c
+.el .if !'\\$3'no'   \v'-0.9'\z\l'\\n(.lu*3u/8u'\v'0.9'\c
+.I "\\$2"
+.sp
+.ds 'Q \\n%
+.in
+.ie \\n(;S           .nr ;S 0
+.el .if !'\\$3'full' .nr ;S \\n(.d
+..
+.\" =============================================================
+.\" module: paper
+.\" =============================================================
+.\" 1 u = 352+7/9 nm
+.\" .'O name  sets ;J and ;K to width and height of named paper
+.de 'O
+.nr ;Q +1
+.if !'\\n(;Q'aa' .ie '\\*('\\n(;Q'\\$1' \{\
+.	nr ;J \\n('\\n(;Q
+.	af ;Q A
+.	nr ;K \\n('\\n(;Q \}
+.el .if !'\\*('\\n(;Q'' .'O \\$1
+..
+.\" .'N name ["R"]
+.de 'N
+.nr ;J 0
+.nr ;K 0
+.nr ;Q 0
+.af ;Q a
+.'O \\$1
+.if '\\$2'R' \{\
+.	nr ;X \\n(;J
+.	nr ;J \\n(;K
+.	nr ;K \\n(;X \}
+..
+.\" .Ps name w h
+.de Ps
+.nr ;J 0
+.nr ;K 0
+.nr ;Q 0
+.af ;Q a
+.'O \\$1
+.ie '\\n(;Q'aa' .tm \\n(.F:\\n(.c: Paper sizes exhausted
+.el \{\
+.	nr ;J 1000*\\$2
+.	nr ;K 1000*\\$3
+.	ie \\n(;J&\\n(;K \{\
+.		af ;Q a
+.		ds '\\n(;Q \\$1
+.		nr '\\n(;Q \\n(;J
+.		af ;Q A
+.		nr '\\n(;Q \\n(;K \}
+.	el .tm \\n(.F:\\n(.c: Invalid paper size
+.\}
+..
+.\" .Pa ["auto" | name ["R"] | w h]
+.de Pa
+.ie '\\$1'auto' \{\
+.	nr ;W \\n(.o*2+\\n(.l+14*10000/1c  \" add almost 5 um for rounding
+.	nr ;H \\n(.p+14*10000/1c \}
+.el .if !'\\$1'' \{\
+.	'N \\$1 \\$2
+.	ie \\n(;J&\\n(;K \{\
+.		nr ;W \\n(;J
+.		nr ;H \\n(;K \}
+.	el \{\
+.		nr ;W 1000*\\$1
+.		nr ;H 1000*\\$2 \}\}
+.'G \\n(;W
+.nr Aw \\*('Xc
+.'G \\n(;H
+.nr Ah \\*('Xc
+.nr Ax 0
+.nr Ay 0
+.nr Ap \\n(Ah
+.nr Sx \\n(Aw
+.nr Sy \\n(Ah
+.nr Sw 0-\\n(Aw
+.nr Sh 0-\\n(Ah
+.nr Fl \\n(Ah
+.nr Fm \\n(Fl
+..
+.de 'G
+.nr ;X \\$1
+.nr ;Y 0\\n(;X/10000
+.ie \\n(;Y=0&-\\n(;X .ds 'X -0
+.el                  .ds 'X \\n(;Y
+.nr ;Y 0\\n(;X%10000
+.if -\\n(;Y .nr ;Y 0-\\n(;Y
+.if \\n(;Y \{\
+.	ie     \\n(;Y<10   .as 'X .000
+.	el .ie \\n(;Y<100  .as 'X .00
+.	el .ie \\n(;Y<1000 .as 'X .0
+.	el                 .as 'X .
+.	if !\\n(;Y%100 .nr ;Y \\n(;Y/100
+.	if !\\n(;Y%10  .nr ;Y \\n(;Y/10
+.	as 'X \\n(;Y
+.\}
+..
+.\" .'D (x|y) (w|h) (""|p) w x DeltaX edge
+.de 'D
+.nr A\\$2 +\\n(A\\$1
+.nr S\\$2 +\\n(S\\$1
+.if !'\\$3'' .nr A\\$3 +\\n(A\\$2
+.'G \\$5
+.if 0\\*('Xc-\\n(A\\$1 .nr A\\$1 0\\*('Xc
+.'G -\\$6
+.if 0\\n(S\\$1-\\*('Xc .nr S\\$1 0\\*('Xc
+.'G +\\$4
+.if 0\\n(A\\$2-\\*('Xc .nr A\\$2 0\\*('Xc
+.'G +\\$6
+.if !'\\$3'' .if 0\\n(A\\$3-\\*('Xc .nr A\\$3 0\\*('Xc
+.if 0\\*('Xc-\\n(S\\$2 .nr S\\$2 0\\*('Xc
+.if !'\\$3'' .nr A\\$3 -\\n(A\\$2
+.nr A\\$2 -\\n(A\\$1
+.nr S\\$2 -\\n(S\\$1
+..
+.\" .'E w h x y
+.de 'E
+.if !\\n(;J-\\n(;W+1&\\n(;K&\\$1&\\$2&\\$3&\\$4 \
+.	tm \\n(.F:\\n(.c: Invalid envelope configuration
+.'D x w "" (1000*\\$1) (1000*\\$3) (\\n(;J-\\n(;W)
+.'G \\n(;K
+.ds 'Y \\*('X
+.nr ;X 0\\n(;H-1/\\n(;K		\" f(p, i)
+.'G 0-\\n(;H/(\\n(;X+1)
+.ie \\*('Xc+\\n(Fl \{\
+.'G +0
+.	nr Fl 0-\\*('Xc
+.	nr Fm 0\\*('Yc \}
+.\" .el .if \\n(Fl+\\n(;X==0 .if \\n(;K-\\n(Fm .nr Fm 0\\*('Yc
+.el \{\
+.if \\n(Fl+\\n(;X==0 \{\
+.if \\n(;K-\\n(Fm \{\
+.nr Fm 0\\*('Yc \} \} \}
+.nr ;X +\\n(;K		\" (Delta y)
+.'D y h p (1000*\\$2) (1000*\\$4) \\n(;X
+.if !\\n(Ah&\\n(Aw .tm \\n(.F:\\n(.c: Envelope configuration collapsed
+..
+.\" .En (name ["R"] | W H) w h x y
+.\" name, "R", W, H: envelope
+.\" w, h, x, y: window
+.de En
+.'N \\$1 \\$2
+.ie \\n(;J&\\n(;K \{\
+.	ie '\\$2'R' .'E \\$3 \\$4 \\$5 \\$6
+.	el          .'E \\$2 \\$3 \\$4 \\$5 \}
+.el \{\
+.	nr ;J 1000*\\$1
+.	nr ;K 1000*\\$2
+.	'E \\$3 \\$4 \\$5 \\$6 \}
+..
+.\" .Fo name ["R"] | H
+.de Fo
+.'N \\$1 \\$2
+.ie \\n(;K .nr Fm \\n(;Kc/1000
+.el        .nr Fm 0\\$1c/10
+.nr ;X \\n(;Hc/1000/\\n(Fm
+.nr Fl \\n(;Hc/1000/(\\n(;X+1)
+..
+.de Fo
+.'N \\$1 \\$2
+.ie \\n(;K .'G \\n(;K
+.el        .'G 1000*\\$1
+.nr Fm \\*('Xc
+.nr ;X \\n(;H-1/\\n(;X
+.'G \\n(;H/(\\n(;X+1)
+.nr Fl \\*('Xc
+..
+.\" predefined paper/envelope sizes
+.Ps C6/C5 229 114
+.Ps C4    229 324
+.Ps DL    220 110
+.Ps A4    210 297
+.Ps A5    210 148
+.Ps B4    250 353
+.Ps B5    250 176
+.Ps C5    229 162
+.\" default config
+.Pa A4
+.En C6/C5 90 52 25 48
+.En C6/C5 90 44 20 53
+.nr Ai 0.3c
+.\" =============================================================
+.\" module: address block
+.\" =============================================================
+.de 'L
+.if !'\\*(\\$1'' .ie \\n(.l-\\n(.i-\\n(.k<\\w'\\*(_j\\*(\\$1' \&
+.el \&\\*(_j\c
+\&\\*(\\$1\c
+..
+.de 'F
+.di 'S
+.if t \{\
+.	ps \\n(Ss
+.	ie \\n(Sv .vs \\n(Sv
+.	el        .vs \\n(Ss \}
+.ie     !'\\*(Sn'' .ft \\*(Sn
+.el .ie !'\\*(Nf'' .ft \\*(Nf
+.el                .ft CB
+\&\\*(Nm\c
+.ft
+.ie     !'\\*(Sa'' .ft \\*(Sa
+.el .ie !'\\*(Af'' .ft \\*(Af
+.el                .ft C
+.ie \\$1 \{\
+.	ds 'X \\*(1a
+.	if !'\\*(2a'' .as 'X "\\*(_j\\*(2a
+.	if !'\\*(3a'' .as 'X "\\*(_j\\*(3a
+.	if !'\\*(4a'' .as 'X "\\*(_j\\*(4a
+.	if !'\\*(5a'' .as 'X "\\*(_j\\*(5a
+.	if !'\\*(6a'' .as 'X "\\*(_j\\*(6a
+.	ie \\n(.l-\\n(.i>=\\w'\\*('X' .'L 'X
+.	el \{\
+.		'L 1a
+.		'L 2a
+.		'L 3a
+.		'L 4a
+.		'L 5a
+.		'L 6a
+.\}
+\&\}
+.el \{\
+\&
+\&\\*(1a
+.	if !'\\*(2a'' \&\\*(2a
+.	if !'\\*(3a'' \&\\*(3a
+.	if !'\\*(4a'' \&\\*(4a
+.	if !'\\*(5a'' \&\\*(5a
+.	if !'\\*(6a'' \&\\*(6a\}
+.Hs
+.sp 4p
+.if t \{\
+.	ps
+.	vs \}
+.ft
+.di
+..
+.de Ad
+.\" end box, reset formatting, force output
+.Be
+\&
+.br
+.ev 1
+.nr ;B 128
+.ie t .po \\n(Axu
+.el .po 1c
+.ll \\n(Awu
+.in \\n(Aiu
+.sp |\\n(Ayu+\\n(Aju-2p
+.\" .if n .sp -1
+.nf
+.di 'R
+.if t \{\
+.	ps \\n(Rs
+.	ie \\n(Rv .vs \\n(Rv
+.	el        .vs \\n(Rs \}
+.ie '\\*(Nf'' .ft CB
+.el           .ft \\*(Nf
+\&\\$1
+.ft
+.ie '\\*(Af'' .ft C
+.el           .ft \\*(Af
+..
+.de 'A
+.sp \\n(Agu
+.ft
+.if t \{\
+.	ps
+.	vs \}
+.di
+.nr ;R \\n(Ahu+\\n(Avu-\\n(Aju-\\n(dnu
+.'F \\n(Cf%2
+.if !\\n(Cf%2 .if \\n(dn-\\n(;R .'F 1
+.nr ;R -\\n(dnu
+.if !\\n(;R .if -\\n(;R-\\n(Ap .tm \\n(.F:\\n(.c: Warning: Address too long
+.nr ;X 0\\n(;Ru
+.if \\n(;R-4p \{\
+.	nr ;R \\n(Al==0*\\n(Ag+\\n(;R-6p/2
+.	if 4p-\\n(;Ru .nr ;R 4p \}
+.in
+.in 0
+.if !\\n(;R .nr ;R 0
+.sp 0\\n(;Xu-\\n(;Ru*\\n(Alu/2u
+.'S
+.rm 'S
+.sp \\n(;Ru
+.nr ;R \\n(.d
+.'R
+.rm 'R
+.in
+.ll
+.po
+.if \\n(.d+0.5c-\\n(;T .nr ;T \\n(.d+0.5c
+.ps 1
+.vs 0
+.sp 2p
+.if \\n(Cf/2%2 .if \\n(.p-\\n(Fl \{\
+.	nr ;X \\n(.d-\\n(Ay-\\n(Ah
+.	if \\n(Av-\\n(;X .nr ;X \\n(Avu
+.	sp |\\n(Flu+\\n(;Xu
+.	if \\n(.d-\\n(Fm .sp |\\n(Fmu
+\h'-\\n(.ou'\z\D'l 0.7c 0'\h'\\n(.ou*2u+\n(.lu'\z\D'l -0.7c 0'\
+\v'\\n(.du'\z\D'l -0.7c 0'\h'-\\n(.ou*2u-\n(.lu'\z\D'l 0.7c 0'\}
+.fi
+.ps
+.vs
+.ev
+.sp |\\n(;Tu
+.ce 9999
+.'T
+.rm 'T
+.ce 0
+.nr ;B 0
+.Am
+..
+.de Ae
+.'A
+..
+.\" =============================================================
+.\" module: Berkeley .AM compatibility
+.\" =============================================================
+.rn AM 'M
+.de AM
+.tm \\n(.F:\\n(.c: Error: .AM before .Ae
+.tm \\n(.F:\\n(.c: To resolve the issue, invoke .Am to choose
+.tm \\n(.F:\\n(.c: the behaviour of .AM.  After ".Am keep",
+.tm \\n(.F:\\n(.c: .AM keeps .Ae and makes \\\\*(Ae available as \\\\*(Az.
+.tm \\n(.F:\\n(.c: Otherwise .AM functions as usual and .Be must
+.tm \\n(.F:\\n(.c: be used instead of .Ae.
+.ab \\n(.F:\\n(.c: Aborting
+..
+.de Am
+.rn 'M AM
+.if '\\$1'keep' \{\
+.am AM
+.ds Az \\\\*(Ae
+.de Ae
+.'A
+\\\\..
+\\.. \}
+.rm Am
+..
