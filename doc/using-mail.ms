@@ -1146,11 +1146,9 @@ apply the following formulae:
 .LP
 .nr Xd \n(.d
 .sp |\n(Xdu
-.\" .LP
 .po +\n(.lu/2u
 .ll -\n(.lu/2u
 .nr LL -\n(.lu
-.\" .LP
 .EQ L "(number of times paper is folded)"
 ~~~~~~~~~ t si mark = left floor h sp over H si right floor
 .EN
@@ -1191,7 +1189,9 @@ lpile { if ~ t si > 0 above if ~ t si = 0 }
 h sx lineup = b sx - b sv
 .EN
 .nr Xe \n(.d
+\&
 .sp |\n(Xdu
+.sp -\n(PDu*16/10
 .nr LL
 .po
 .EQ L "(horizontal displacement)"
@@ -1223,6 +1223,7 @@ w sx lineup = w sv
 .EN
 .ll \n(.lu*2u
 .nr LL \n(.lu
+\&
 .sp |\n(Xeu
 .ig
 .SH
@@ -1323,6 +1324,8 @@ if ~ 0 <= h sub A - h sv <= y sub M - y sub L above
 if ~ h sub A - h sv > y sub M - y sub L
 }
 .EN
+\&
+.bp
 .ig
 .SH
 Post-\f(CB.Ae\fP placement
@@ -1340,7 +1343,6 @@ if ~ y sv + h sub A + 5 mm <= y sx above
 if ~ y sv + h sub A + 5 mm > y sx }
 .\" .EN
 ..
-.bp
 .\" .ds _j " \(bu \"
 .As
 .ds Nm Sender

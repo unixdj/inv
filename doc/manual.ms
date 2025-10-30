@@ -356,7 +356,7 @@ directive, it must be preceded by
 .CW
 T{
 Line breaks are ignored within tbl blocks.
-Use ".bp" on its own line to force a line break.
+Use ".br" on its own line to force a line break.
 \&.Charge 100 8 Hours T}
 .DE
 .Ma .Taxed amount
